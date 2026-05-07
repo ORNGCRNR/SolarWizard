@@ -42,18 +42,14 @@ SolarWizard/
 
 ## 🚀 How to Build & Run
 
-### Option 1 — Quick (double-click)
-```
-run.bat
-```
 
-### Option 2 — Manual Maven
+### Option 1 — Manual Maven
 ```cmd
 mvn clean package
 java -jar target/SolarWizard-fat.jar
 ```
 
-### Option 3 — Maven JavaFX plugin (dev mode)
+### Option 2 — Maven JavaFX plugin (dev mode)
 ```cmd
 mvn javafx:run
 ```
