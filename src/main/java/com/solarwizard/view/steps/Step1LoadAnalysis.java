@@ -1,0 +1,334 @@
+package com.solarwizard.view.steps;
+
+import com.solarwizard.model.Appliance;
+import com.solarwizard.model.SolarProject;
+import com.solarwizard.service.CalcService;
+import com.solarwizard.util.UiUtils;
+import com.solarwizard.view.WizardShell;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+
+/**
+ * Step 1 — Load Analysis
+ * Modes: DIRECT | BILL | DEVICE
+ * Fixed column alignment in device table, scrollable chip bar.
+ */
+public class Step1LoadAnalysis implements WizardShell.StepView {
+
+    // Fixed column widths — MUST match header and row exactly
+    private static final double W_NAME  = 160;
+    private static final double W_WATTS = 95;
+    private static final double W_HOURS = 85;
+    private static final double W_QTY   = 70;
+    private static final double W_KWH   = 95;
+    private static final double W_DEL   = 36;
+
+    private final SolarProject project;
+    private final WizardShell  shell;
+    private final ScrollPane   root = new ScrollPane();
+    private final VBox         mainContent = new VBox(16);
+    private final StackPane    modeContent = new StackPane();
+
+    private Button btnDirect, btnBill, btnDevice;
+
+    // Result labels
+    private final Label lblDailyWh   = new Label("0 Wh");
+    private final Label lblDailyKwh  = new Label("0.00 kWh");
+    private final Label lblHourlyAvg = new Label("0 W");
+    private final Label formulaLbl   = new Label();
+
+    public Step1LoadAnalysis(SolarProject project, WizardShell shell) {
+        this.project = project;
+        this.shell   = shell;
+        build();
+    }
+
+    private void build() {
+        mainContent.setPadding(new Insets(24, 28, 24, 28));
+        mainContent.getStyleClass().add("step-content");
+        mainContent.getChildren().add(UiUtils.stepTitle("⚡", "Step 1: Load Analysis"));
+        mainContent.getChildren().add(buildModeBar());
+        mainContent.getChildren().add(modeContent);
+        mainContent.getChildren().add(buildResultTiles());
+        HBox fb = UiUtils.formulaBanner(""); fb.getChildren().set(1, formulaLbl);
+        mainContent.getChildren().add(fb);
+        mainContent.getChildren().add(buildNavRow());
+
+        root.setContent(mainContent);
+        root.setFitToWidth(true);
+        root.getStyleClass().add("step-scroll");
+        setMode(project.getLoadMode());
+    }
+
+    // ── Mode bar ──────────────────────────────────────────────────────────────
+    private HBox buildModeBar() {
+        btnDirect = UiUtils.modeButton("✎  DIRECT");
+        btnBill   = UiUtils.modeButton("⊟  BILL");
+        btnDevice = UiUtils.modeButton("⊞  DEVICE");
+        btnDirect.setOnAction(e -> setMode(SolarProject.LoadMode.DIRECT));
+        btnBill  .setOnAction(e -> setMode(SolarProject.LoadMode.BILL));
+        btnDevice.setOnAction(e -> setMode(SolarProject.LoadMode.DEVICE));
+        HBox bar = new HBox(4, btnDirect, btnBill, btnDevice);
+        bar.getStyleClass().add("mode-bar");
+        return bar;
+    }
+
+    private void setMode(SolarProject.LoadMode mode) {
+        project.setLoadMode(mode);
+        btnDirect.getStyleClass().remove("mode-btn-active");
+        btnBill  .getStyleClass().remove("mode-btn-active");
+        btnDevice.getStyleClass().remove("mode-btn-active");
+        switch (mode) {
+            case DIRECT -> { btnDirect.getStyleClass().add("mode-btn-active"); modeContent.getChildren().setAll(buildDirectMode()); }
+            case BILL   -> { btnBill  .getStyleClass().add("mode-btn-active"); modeContent.getChildren().setAll(buildBillMode()); }
+            case DEVICE -> { btnDevice.getStyleClass().add("mode-btn-active"); modeContent.getChildren().setAll(buildDeviceMode()); }
+        }
+        recalculate();
+    }
+
+    // ── DIRECT ────────────────────────────────────────────────────────────────
+    private Node buildDirectMode() {
+        Spinner<Double> spM = UiUtils.doubleSpinner(0, 99999, project.getMonthlyKwh(), 10);
+        spM.valueProperty().addListener((o, a, n) -> { project.setMonthlyKwh(n); recalculate(); });
+        Spinner<Double> spP = UiUtils.doubleSpinner(0.5, 12, project.getSunPeakHours(), 0.5);
+        spP.valueProperty().addListener((o, a, n) -> { project.setSunPeakHours(n); recalculate(); });
+        HBox row = new HBox(16,
+            UiUtils.labeledField("Monthly Consumption (kWh)", spM, "Check your electric bill"),
+            UiUtils.labeledField("Sun Peak Hours",            spP, "Philippines average: 4-5 hours"));
+        return row;
+    }
+
+    // ── BILL ──────────────────────────────────────────────────────────────────
+    private Node buildBillMode() {
+        Spinner<Double> spB = UiUtils.doubleSpinner(0, 999999, project.getMonthlyBill(), 100);
+        spB.valueProperty().addListener((o, a, n) -> { project.setMonthlyBill(n); recalculate(); });
+        Spinner<Double> spR = UiUtils.doubleSpinner(0, 100, project.getRatePerKwh(), 0.5);
+        spR.valueProperty().addListener((o, a, n) -> { project.setRatePerKwh(n); recalculate(); });
+        Spinner<Double> spP = UiUtils.doubleSpinner(0.5, 12, project.getSunPeakHours(), 0.5);
+        spP.valueProperty().addListener((o, a, n) -> { project.setSunPeakHours(n); recalculate(); });
+        HBox row = new HBox(16,
+            UiUtils.labeledField("Monthly Electric Bill (₱)", spB, "Total monthly bill"),
+            UiUtils.labeledField("Rate per kWh (₱)",          spR, "e.g. 11.50"),
+            UiUtils.labeledField("Sun Peak Hours",             spP, "Philippines average: 4-5 hours"));
+        return row;
+    }
+
+    // ── DEVICE ────────────────────────────────────────────────────────────────
+    private Node buildDeviceMode() {
+        Spinner<Double> spP = UiUtils.doubleSpinner(0.5, 12, project.getSunPeakHours(), 0.5);
+        spP.valueProperty().addListener((o, a, n) -> { project.setSunPeakHours(n); recalculate(); });
+        VBox pshField = UiUtils.labeledField("Sun Peak Hours", spP, "Philippines average: 4-5 hours");
+
+        // Table
+        HBox header = buildDeviceTableHeader();
+        VBox deviceRows = new VBox(4);
+
+        // Populate existing appliances
+        for (Appliance a : project.getAppliances()) {
+            deviceRows.getChildren().add(buildDeviceRow(a, deviceRows));
+        }
+        if (project.getAppliances().isEmpty()) showDeviceEmptyState(deviceRows);
+
+        Button addBtn = new Button("+ ADD DEVICE");
+        addBtn.getStyleClass().add("add-device-btn");
+        addBtn.setOnAction(e -> {
+            deviceRows.getChildren().removeIf(n -> n instanceof VBox v && v.getStyleClass().contains("empty-state"));
+            Appliance a = new Appliance("LED Light Bulb", 10, 8, 1, false);
+            project.getAppliances().add(a);
+            deviceRows.getChildren().add(buildDeviceRow(a, deviceRows));
+            recalculate();
+        });
+
+        Label tableTitle = new Label("⊟  Appliances / Devices");
+        tableTitle.getStyleClass().add("table-title");
+        Region sp = new Region(); HBox.setHgrow(sp, Priority.ALWAYS);
+        HBox tableTop = new HBox(tableTitle, sp, addBtn);
+        tableTop.setAlignment(Pos.CENTER_LEFT);
+        tableTop.setPadding(new Insets(0, 0, 8, 0));
+
+        VBox deviceTable = new VBox(0, tableTop, header, deviceRows);
+        deviceTable.getStyleClass().add("device-table");
+        deviceTable.setPadding(new Insets(12));
+
+        // Scrollable chip bar
+        ScrollPane chipScroll = buildChipScrollBar(deviceRows);
+
+        return new VBox(12, pshField, deviceTable, chipScroll);
+    }
+
+    private HBox buildDeviceTableHeader() {
+        HBox header = new HBox(8);
+        header.getStyleClass().add("device-table-header");
+        header.setPadding(new Insets(6, 8, 6, 8));
+        header.getChildren().addAll(
+            colHdr("Device Name",  W_NAME),
+            colHdr("Watts",        W_WATTS),
+            colHdr("Hours/Day",    W_HOURS),
+            colHdr("Qty",          W_QTY),
+            colHdr("kWh/mo",       W_KWH),
+            colHdr("",             W_DEL)
+        );
+        return header;
+    }
+
+    private Label colHdr(String text, double width) {
+        Label l = new Label(text);
+        l.getStyleClass().add("col-header");
+        l.setPrefWidth(width);
+        l.setMinWidth(width);
+        l.setMaxWidth(width);
+        return l;
+    }
+
+    private HBox buildDeviceRow(Appliance appliance, VBox deviceRows) {
+        // Device name combo
+        ComboBox<String> nameBox = new ComboBox<>();
+        nameBox.setEditable(true);
+        nameBox.getStyleClass().add("device-combo");
+        for (Appliance.Preset p : Appliance.PRESETS) nameBox.getItems().add(p.name());
+        nameBox.setValue(appliance.getName());
+        nameBox.setPrefWidth(W_NAME); nameBox.setMinWidth(W_NAME); nameBox.setMaxWidth(W_NAME);
+        nameBox.valueProperty().addListener((obs, o, name) -> {
+            appliance.setName(name);
+            for (Appliance.Preset p : Appliance.PRESETS) {
+                if (p.name().equals(name)) { appliance.setWatts(p.watts()); appliance.setMotorLoad(p.isMotorLoad()); break; }
+            }
+            recalculate();
+        });
+
+        // Watts
+        Spinner<Double> spW = fixedSpinner(appliance.getWatts(), 0, 99999, 10, W_WATTS);
+        spW.valueProperty().addListener((o, a, n) -> { appliance.setWatts(n); recalculate(); });
+
+        // Hours/day
+        Spinner<Double> spH = fixedSpinner(appliance.getHoursPerDay(), 0, 24, 0.5, W_HOURS);
+        spH.valueProperty().addListener((o, a, n) -> { appliance.setHoursPerDay(n); recalculate(); });
+
+        // Qty
+        Spinner<Integer> spQ = new Spinner<>(1, 99, appliance.getQuantity());
+        spQ.setEditable(true); spQ.getStyleClass().add("styled-spinner");
+        spQ.setPrefWidth(W_QTY); spQ.setMinWidth(W_QTY); spQ.setMaxWidth(W_QTY);
+        spQ.valueProperty().addListener((o, a, n) -> { appliance.setQuantity(n); recalculate(); });
+
+        // kWh label
+        Label kwhLbl = new Label(UiUtils.fmt1(appliance.getMonthlyKwh()) + " kWh/mo");
+        kwhLbl.getStyleClass().add("kwh-label");
+        kwhLbl.setPrefWidth(W_KWH); kwhLbl.setMinWidth(W_KWH); kwhLbl.setMaxWidth(W_KWH);
+
+        Runnable updateKwh = () -> kwhLbl.setText(UiUtils.fmt1(appliance.getMonthlyKwh()) + " kWh/mo");
+        spW.valueProperty().addListener((o, a, n) -> updateKwh.run());
+        spH.valueProperty().addListener((o, a, n) -> updateKwh.run());
+        spQ.valueProperty().addListener((o, a, n) -> updateKwh.run());
+
+        // Delete
+        Button del = new Button("🗑");
+        del.getStyleClass().add("delete-btn");
+        del.setPrefWidth(W_DEL); del.setMinWidth(W_DEL); del.setMaxWidth(W_DEL);
+        del.setOnAction(e -> {
+            project.getAppliances().remove(appliance);
+            deviceRows.getChildren().remove(del.getParent());
+            if (project.getAppliances().isEmpty()) showDeviceEmptyState(deviceRows);
+            recalculate();
+        });
+
+        HBox row = new HBox(8, nameBox, spW, spH, spQ, kwhLbl, del);
+        row.setAlignment(Pos.CENTER_LEFT);
+        row.getStyleClass().add("device-row");
+        row.setPadding(new Insets(4, 8, 4, 8));
+        return row;
+    }
+
+    private Spinner<Double> fixedSpinner(double init, double min, double max, double step, double width) {
+        Spinner<Double> sp = new Spinner<>(min, max, init, step);
+        sp.setEditable(true); sp.getStyleClass().add("styled-spinner");
+        sp.setPrefWidth(width); sp.setMinWidth(width); sp.setMaxWidth(width);
+        return sp;
+    }
+
+    private void showDeviceEmptyState(VBox deviceRows) {
+        Label icon = new Label("⚡"); icon.getStyleClass().add("empty-icon");
+        Label msg  = new Label("No devices added yet."); msg.getStyleClass().add("empty-msg");
+        Label sub  = new Label("Click \"Add Device\" to start."); sub.getStyleClass().add("empty-sub");
+        VBox box = new VBox(6, icon, msg, sub);
+        box.setAlignment(Pos.CENTER); box.setPadding(new Insets(24));
+        box.getStyleClass().add("empty-state");
+        deviceRows.getChildren().add(box);
+    }
+
+    private ScrollPane buildChipScrollBar(VBox deviceRows) {
+        HBox chips = new HBox(8);
+        chips.setPadding(new Insets(6));
+        for (Appliance.Preset preset : Appliance.PRESETS) {
+            Button chip = new Button("+ " + preset.name());
+            chip.getStyleClass().add("chip-btn");
+            chip.setOnAction(e -> {
+                deviceRows.getChildren().removeIf(n -> n instanceof VBox v && v.getStyleClass().contains("empty-state"));
+                Appliance a = new Appliance(preset.name(), preset.watts(), 8, 1, preset.isMotorLoad());
+                project.getAppliances().add(a);
+                deviceRows.getChildren().add(buildDeviceRow(a, deviceRows));
+                recalculate();
+            });
+            chips.getChildren().add(chip);
+        }
+        ScrollPane scroll = new ScrollPane(chips);
+        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scroll.setFitToHeight(true);
+        scroll.setPrefHeight(54);
+        scroll.getStyleClass().add("chip-scroll");
+        return scroll;
+    }
+
+    // ── Result tiles ──────────────────────────────────────────────────────────
+    private HBox buildResultTiles() {
+        lblDailyWh  .getStyleClass().addAll("metric-value", "metric-blue");
+        lblDailyKwh .getStyleClass().addAll("metric-value", "metric-blue");
+        lblHourlyAvg.getStyleClass().addAll("metric-value", "metric-default");
+        HBox row = new HBox(12,
+            makeTile("Daily Consumption", lblDailyWh),
+            makeTile("Daily Consumption", lblDailyKwh),
+            makeTile("Hourly Average",    lblHourlyAvg));
+        row.getChildren().forEach(n -> HBox.setHgrow(n, Priority.ALWAYS));
+        return row;
+    }
+
+    private VBox makeTile(String label, Label value) {
+        Label lbl = new Label(label); lbl.getStyleClass().add("metric-label");
+        VBox box = new VBox(4, lbl, value);
+        box.getStyleClass().add("metric-tile"); box.setPadding(new Insets(14));
+        return box;
+    }
+
+    private void recalculate() {
+        CalcService.calculate(project);
+        double dailyWh = project.getResultDailyWh();
+        lblDailyWh  .setText(UiUtils.fmt0(dailyWh) + " Wh");
+        lblDailyKwh .setText(UiUtils.fmt2(dailyWh / 1000) + " kWh");
+        lblHourlyAvg.setText(UiUtils.fmt0(CalcService.hourlyAvgWatts(dailyWh)) + " W");
+
+        double monthlyKwh = switch (project.getLoadMode()) {
+            case DIRECT -> project.getMonthlyKwh();
+            case BILL   -> CalcService.monthlyKwhFromBill(project.getMonthlyBill(), project.getRatePerKwh());
+            case DEVICE -> CalcService.monthlyKwhFromDevices(project.getAppliances());
+        };
+        formulaLbl.setText(String.format(
+            "Formula: Daily Wh = (%.1f kWh / 30 days) × 1,000 = %.0f Wh", monthlyKwh, dailyWh));
+        formulaLbl.getStyleClass().add("formula-text");
+    }
+
+    private HBox buildNavRow() {
+        Button next = new Button("NEXT →"); next.getStyleClass().add("nav-next-btn");
+        next.setOnAction(e -> shell.nextStep());
+        Region sp = new Region(); HBox.setHgrow(sp, Priority.ALWAYS);
+        HBox row = new HBox(sp, next); row.setPadding(new Insets(16, 0, 0, 0));
+        return row;
+    }
+
+    @Override public Node   getRoot()      { return root; }
+    @Override public String getStepTitle() { return "Load Analysis"; }
+    @Override public void   onEnter()      { recalculate(); }
+    @Override public void   onLeave()      {}
+}
