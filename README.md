@@ -1,6 +1,6 @@
 # ☀ Solar Sizing Wizard
 
-A professional dark-mode JavaFX desktop app for solar panel system sizing.
+A desktop app for solar panel system sizing.
 Built on Java 23 + JavaFX 23 + Maven 3.9.
 
 ---
