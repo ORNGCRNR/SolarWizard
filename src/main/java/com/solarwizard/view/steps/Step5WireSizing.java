@@ -71,16 +71,24 @@ public class Step5WireSizing implements WizardShell.StepView {
     }
 
     private VBox buildTable() {
+        double[] colWidths = { 150, 90, 90, 100, 80, 90, 100 };
         String[] headers = { "Section", "Current (A)", "Voltage (V)", "Distance (m)", "VDI", "Wire (AWG)", "Wire (mm²)" };
         HBox headerRow = new HBox();
         headerRow.getStyleClass().add("device-table-header");
         headerRow.setPadding(new Insets(10, 12, 10, 12));
 
-        Label nameHdr = new Label(headers[0]); nameHdr.getStyleClass().add("col-header"); nameHdr.setPrefWidth(150);
+        Label nameHdr = new Label(headers[0]);
+        nameHdr.getStyleClass().add("col-header");
+        nameHdr.setPrefWidth(colWidths[0]);
+        nameHdr.setMinWidth(colWidths[0]);
         headerRow.getChildren().add(nameHdr);
         for (int i = 1; i < headers.length; i++) {
-            Label h = new Label(headers[i]); h.getStyleClass().add("col-header");
-            HBox.setHgrow(h, Priority.ALWAYS); headerRow.getChildren().add(h);
+            Label h = new Label(headers[i]);
+            h.getStyleClass().add("col-header");
+            h.setPrefWidth(colWidths[i]);
+            h.setMinWidth(colWidths[i]);
+            h.setWrapText(true);
+            headerRow.getChildren().add(h);
         }
 
         VBox tableBox = new VBox(0, headerRow);
@@ -91,13 +99,17 @@ public class Step5WireSizing implements WizardShell.StepView {
             dataRow.getStyleClass().add(r % 2 == 0 ? "table-row-even" : "table-row-odd");
             dataRow.setPadding(new Insets(10, 12, 10, 12));
             Label nameCell = new Label(ROW_NAMES[r]);
-            nameCell.getStyleClass().add("table-cell"); nameCell.setPrefWidth(150);
+            nameCell.getStyleClass().add("table-cell");
+            nameCell.setPrefWidth(colWidths[0]);
+            nameCell.setMinWidth(colWidths[0]);
             dataRow.getChildren().add(nameCell);
             for (int c = 0; c < 6; c++) {
                 tableCells[r][c] = new Label("-");
                 tableCells[r][c].getStyleClass().add("table-cell");
                 if (c == 4) tableCells[r][c].getStyleClass().add("awg-value");
-                HBox.setHgrow(tableCells[r][c], Priority.ALWAYS);
+                tableCells[r][c].setPrefWidth(colWidths[c + 1]);
+                tableCells[r][c].setMinWidth(colWidths[c + 1]);
+                tableCells[r][c].setMaxWidth(Double.MAX_VALUE);
                 dataRow.getChildren().add(tableCells[r][c]);
             }
             tableBox.getChildren().add(dataRow);
