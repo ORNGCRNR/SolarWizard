@@ -56,12 +56,33 @@ public class CalcService {
 
     public static double hourlyAvgWatts(double dailyWh) { return dailyWh / 24.0; }
 
-    // ── Step 2: Solar Panel Sizing ────────────────────────────────────────────
-    /** Formula: (Daily Wh / PSH) × 1.25 safety factor */
-    public static double requiredPvPower(double dailyWh, double psh, boolean safetyFactor) {
+    // ── Step 2: Energy Requirement ────────────────────────────────────────────
+    public static double expectedDailyWh(double dailyWh, double lossPercent) {
+        return dailyWh * (1.0 + (lossPercent / 100.0));
+    }
+
+    public static double totalEnergyRequirementWh(double expectedDailyWh, double autonomyDays) {
+        return expectedDailyWh * autonomyDays;
+    }
+
+    /** Formula from the decision flow: Required Ah = Total Energy Requirement / battery voltage. */
+    public static double requiredBatteryAh(double totalEnergyRequirementWh, double voltage) {
+        if (voltage <= 0) return 0;
+        return totalEnergyRequirementWh / voltage;
+    }
+
+    public static double batteryBankEnergyWh(int batteries, double voltage, double capacityAh) {
+        return batteries * voltage * capacityAh;
+    }
+
+    public static double recommendedEnergyConsumptionWh(double batteryBankEnergyWh, double dod) {
+        return batteryBankEnergyWh * dod;
+    }
+
+    /** Formula: Solar Panel Array Size = recommended energy consumption / peak sun hours. */
+    public static double requiredPvPower(double dailyWh, double psh) {
         if (psh <= 0) return 0;
-        double raw = dailyWh / psh;
-        return safetyFactor ? raw * 1.25 : raw;
+        return dailyWh / psh;
     }
 
     public static int panelsNeeded(double requiredPvW, double panelWattage) {
@@ -73,15 +94,50 @@ public class CalcService {
         return panelCount * panelWattage;
     }
 
-    // ── Step 3: Inverter Sizing ───────────────────────────────────────────────
-    /** Peak load = Daily Wh / PSH; With margin = Peak × 1.20 */
-    public static double peakLoadWatts(double dailyWh, double psh) {
-        if (psh <= 0) return 0;
-        return dailyWh / psh;
+    public static int parallelStringCount(SolarProject p) {
+        int panels = Math.max(p.getResultPanelsNeeded(), 0);
+        if (panels == 0) return 0;
+        return p.getPanelWiring() == SolarProject.PanelWiring.PARALLEL ? panels : 1;
     }
 
-    public static double inverterWithMargin(double peakLoad) {
-        return peakLoad * 1.20;
+    public static int seriesPanelCount(SolarProject p) {
+        int panels = Math.max(p.getResultPanelsNeeded(), 0);
+        if (panels == 0) return 0;
+        return p.getPanelWiring() == SolarProject.PanelWiring.SERIES ? panels : 1;
+    }
+
+    public static double adjustedArrayVoc(SolarProject p) {
+        return p.getPanelVoc() * seriesPanelCount(p);
+    }
+
+    public static double adjustedArrayVmp(SolarProject p) {
+        return p.getPanelVmp() * seriesPanelCount(p);
+    }
+
+    public static double adjustedArrayIsc(SolarProject p) {
+        return p.getPanelIsc() * parallelStringCount(p);
+    }
+
+    public static double adjustedArrayImp(SolarProject p) {
+        return p.getPanelImp() * parallelStringCount(p);
+    }
+
+    public static double requiredChargeControllerCurrent(SolarProject p) {
+        if (p.getChargeControllerType() == SolarProject.ChargeControllerType.PWM) {
+            return adjustedArrayIsc(p) * 1.25;
+        }
+        if (p.getBatteryVoltage() <= 0) return 0;
+        return p.getResultTotalPvW() / p.getBatteryVoltage();
+    }
+
+    // ── Step 6: Inverter Sizing ───────────────────────────────────────────────
+    /** Sum of adjusted appliance watts, with motor loads multiplied by 3. */
+    public static double adjustedLoadWatts(List<Appliance> appliances) {
+        return appliances.stream().mapToDouble(Appliance::getAdjustedWatts).sum();
+    }
+
+    public static double inverterWithMargin(double adjustedLoadWatts) {
+        return adjustedLoadWatts * 1.20;
     }
 
     public static int recommendedInverterWatts(double minWatts) {
@@ -91,21 +147,13 @@ public class CalcService {
         return STANDARD_INVERTER_SIZES[STANDARD_INVERTER_SIZES.length - 1];
     }
 
-    // ── Step 4: Battery Sizing ────────────────────────────────────────────────
-    /** Formula: Capacity (Ah) = (Daily Wh × autonomy hours / 24) / (DOD × voltage) */
-    public static double requiredBatteryAh(double dailyWh, double autonomyHours,
-                                           double dod, double voltage) {
-        if (dod <= 0 || voltage <= 0) return 0;
-        double autonomyDays = autonomyHours / 24.0;
-        return (dailyWh * autonomyDays) / (dod * voltage);
-    }
-
+    // ── Shared sizing helpers ─────────────────────────────────────────────────
     public static int batteriesNeeded(double requiredAh, double batteryAh) {
         if (batteryAh <= 0) return 0;
         return (int) Math.ceil(requiredAh / batteryAh);
     }
 
-    // ── Step 5: Wire Sizing (VDI Method) ─────────────────────────────────────
+    // ── Step 7: Wire Sizing (VDI Method) ─────────────────────────────────────
     public static double metresToFeet(double metres) { return metres * 3.28084; }
 
     public static double vdi(double currentA, double distanceFt,
@@ -121,12 +169,15 @@ public class CalcService {
         return AWG_TABLE[AWG_TABLE.length - 1];
     }
 
-    // ── Step 6: Breaker Sizing ────────────────────────────────────────────────
+    // ── Step 8: Breaker Sizing ────────────────────────────────────────────────
     public static int breakerSize(double currentA) {
-        double min = currentA * 1.25;
+        return standardBreakerSize(currentA * 1.25);
+    }
+
+    public static int standardBreakerSize(double minimumAmps) {
         int[] standards = {10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 100, 125, 150, 175, 200};
-        for (int s : standards) { if (s >= min) return s; }
-        return (int) Math.ceil(min / 10) * 10;
+        for (int s : standards) { if (s >= minimumAmps) return s; }
+        return (int) Math.ceil(minimumAmps / 10) * 10;
     }
 
     // ── Full project recalculation ────────────────────────────────────────────
@@ -140,20 +191,36 @@ public class CalcService {
         p.setResultDailyWh(dailyWh);
 
         // Step 2
-        double reqPv = requiredPvPower(dailyWh, p.getSunPeakHours(), p.isPanelSafetyFactor());
+        double expectedWh = expectedDailyWh(dailyWh, p.getSystemLossPercent());
+        double totalEnergyRequirement = totalEnergyRequirementWh(expectedWh, p.getAutonomyDays());
+        p.setResultExpectedDailyWh(expectedWh);
+        p.setResultTotalEnergyRequirementWh(totalEnergyRequirement);
+
+        // Step 3
+        double reqAh = requiredBatteryAh(totalEnergyRequirement, p.getBatteryVoltage());
+        p.setResultBatteryAh(reqAh);
+        int batteries = batteriesNeeded(reqAh, p.getBatteryCapacityAh());
+        p.setResultBatteriesNeeded(batteries);
+        double bankEnergyWh = batteryBankEnergyWh(batteries, p.getBatteryVoltage(), p.getBatteryCapacityAh());
+        p.setResultBatteryBankEnergyWh(bankEnergyWh);
+        p.setResultRecommendedEnergyWh(recommendedEnergyConsumptionWh(bankEnergyWh, p.getBatteryDod()));
+
+        // Step 4
+        double reqPv = requiredPvPower(p.getResultRecommendedEnergyWh(), p.getSunPeakHours());
         p.setResultRequiredPvW(reqPv);
         int panels = panelsNeeded(reqPv, p.getPanelWattage());
         p.setResultPanelsNeeded(panels);
         p.setResultTotalPvW(totalPvPower(panels, p.getPanelWattage()));
 
-        // Step 3
-        double peak = peakLoadWatts(dailyWh, p.getSunPeakHours());
-        p.setResultInverterMinW(inverterWithMargin(peak));
+        p.setResultArrayVoc(adjustedArrayVoc(p));
+        p.setResultArrayVmp(adjustedArrayVmp(p));
+        p.setResultArrayIsc(adjustedArrayIsc(p));
+        p.setResultArrayImp(adjustedArrayImp(p));
 
-        // Step 4
-        double reqAh = requiredBatteryAh(dailyWh, p.getAutonomyHours(),
-                                          p.getBatteryDod(), p.getBatteryVoltage());
-        p.setResultBatteryAh(reqAh);
-        p.setResultBatteriesNeeded(batteriesNeeded(reqAh, p.getBatteryCapacityAh()));
+        // Step 5
+        p.setResultRequiredSccCurrent(requiredChargeControllerCurrent(p));
+
+        // Step 6
+        p.setResultInverterMinW(inverterWithMargin(adjustedLoadWatts(p.getAppliances())));
     }
 }

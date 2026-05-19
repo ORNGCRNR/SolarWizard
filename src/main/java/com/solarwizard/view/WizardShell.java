@@ -28,11 +28,12 @@ public class WizardShell {
     }
 
     private static final String[] STEP_LABELS = {
-        "Load Analysis", "Panel Sizing", "Inverter Sizing",
-        "Battery Sizing", "Wire Sizing", "Breaker Sizing", "Summary Report"
+        "Appliances", "Energy Requirement", "Battery Bank", "Panel Array",
+        "Charge Controller", "Inverter Sizing", "Wire Sizing", "Circuit Breakers",
+        "Summary Report"
     };
     private static final String[] STEP_ICONS = {
-        "⚡", "☀", "🔌", "🔋", "〰", "⚡", "📋"
+        "1", "2", "3", "4", "5", "6", "7", "8", "R"
     };
 
     private final BorderPane   root        = new BorderPane();
@@ -47,9 +48,11 @@ public class WizardShell {
     public WizardShell(Stage stage, SolarProject project) {
         steps = List.of(
             new Step1LoadAnalysis(project, this),
-            new Step2PanelSizing(project, this),
-            new Step3InverterSizing(project, this),
+            new Step2EnergyRequirement(project, this),
             new Step4BatterySizing(project, this),
+            new Step2PanelSizing(project, this),
+            new Step5ChargeController(project, this),
+            new Step3InverterSizing(project, this),
             new Step5WireSizing(project, this),
             new Step6BreakerSizing(project, this),
             new Step7Summary(project, this)

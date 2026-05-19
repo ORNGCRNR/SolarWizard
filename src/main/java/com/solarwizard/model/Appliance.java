@@ -52,6 +52,11 @@ public class Appliance {
         return watts.get() * hoursPerDay.get() * quantity.get() * 30;
     }
 
+    /** Wh per day for this appliance row */
+    public double getDailyWh() {
+        return watts.get() * hoursPerDay.get() * quantity.get();
+    }
+
     /** kWh per month */
     public double getMonthlyKwh() { return getMonthlyWh() / 1000.0; }
 

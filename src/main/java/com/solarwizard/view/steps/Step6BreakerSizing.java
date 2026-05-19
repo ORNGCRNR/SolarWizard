@@ -10,57 +10,55 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 
 /**
- * Step 6 — Breaker Sizing
- * Formula: Breaker = Current × 1.25, rounded to next standard size.
+ * Step 8 - Circuit breaker sizing.
  */
 public class Step6BreakerSizing implements WizardShell.StepView {
 
     private final SolarProject project;
-    private final WizardShell  shell;
-    private final ScrollPane   root = new ScrollPane();
-    private final VBox         mainContent = new VBox(16);
+    private final WizardShell shell;
+    private final ScrollPane root = new ScrollPane();
+    private final VBox mainContent = new VBox(16);
 
-    private final Label[][] tableCells = new Label[3][5];
+    private final Label[][] tableCells = new Label[4][5];
     private final Label formulaLbl = new Label();
 
-    private static final String[] ROW_NAMES     = { "PV DC Breaker", "Battery DC MCCB", "AC Breaker" };
-    private static final String[] BREAKER_TYPES  = { "DC", "DC", "AC" };
-    private static final String[] VOLTAGE_RATINGS= { "500–1000V DC", "48–60V DC", "220–240V AC" };
+    private static final String[] ROW_NAMES = {
+        "Panels to SCC", "SCC to Battery", "Battery to Inverter", "Inverter to AC Load"
+    };
+    private static final String[] BREAKER_TYPES = { "DC MCB", "DC MCB", "DC MCB", "AC MCB" };
 
     public Step6BreakerSizing(SolarProject project, WizardShell shell) {
         this.project = project;
-        this.shell   = shell;
+        this.shell = shell;
         build();
     }
 
     private void build() {
         mainContent.setPadding(new Insets(24, 28, 24, 28));
         mainContent.getStyleClass().add("step-content");
-        mainContent.getChildren().add(UiUtils.stepTitle("⚡", "Step 6: Breaker Sizing"));
+        mainContent.getChildren().add(UiUtils.stepTitle("8", "Step 8: Circuit Breaker Sizing"));
         mainContent.getChildren().add(buildTable());
-        HBox fb = UiUtils.formulaBanner(""); fb.getChildren().set(1, formulaLbl);
+        HBox fb = UiUtils.formulaBanner("");
+        fb.getChildren().set(1, formulaLbl);
         mainContent.getChildren().add(fb);
         mainContent.getChildren().add(UiUtils.warningBanner(
-            "Use DC-rated breakers for PV and battery circuits. Never use AC breakers for DC applications."));
+            "Use DC-rated breakers for PV, SCC, and battery circuits. AC breakers are only for AC load wiring."));
         mainContent.getChildren().add(buildOptionalComponents());
         mainContent.getChildren().add(buildNavRow());
+
         root.setContent(mainContent);
         root.setFitToWidth(true);
         root.getStyleClass().add("step-scroll");
     }
 
     private VBox buildTable() {
-        double[] colWidths = { 160, 100, 90, 130, 80, 130 };
-        String[] headers = { "Breaker", "Current (A)", "× 1.25", "Breaker Size (A)", "Type", "Voltage Rating" };
+        double[] colWidths = { 165, 105, 125, 130, 85, 125 };
+        String[] headers = { "Phase", "Current (A)", "Formula Current", "Breaker Size (A)", "Type", "Voltage" };
+
         HBox headerRow = new HBox();
         headerRow.getStyleClass().add("device-table-header");
         headerRow.setPadding(new Insets(10, 12, 10, 12));
-        Label nameHdr = new Label(headers[0]);
-        nameHdr.getStyleClass().add("col-header");
-        nameHdr.setPrefWidth(colWidths[0]);
-        nameHdr.setMinWidth(colWidths[0]);
-        headerRow.getChildren().add(nameHdr);
-        for (int i = 1; i < headers.length; i++) {
+        for (int i = 0; i < headers.length; i++) {
             Label h = new Label(headers[i]);
             h.getStyleClass().add("col-header");
             h.setPrefWidth(colWidths[i]);
@@ -72,21 +70,22 @@ public class Step6BreakerSizing implements WizardShell.StepView {
         VBox tableBox = new VBox(0, headerRow);
         tableBox.getStyleClass().add("wire-table");
 
-        for (int r = 0; r < 3; r++) {
+        for (int r = 0; r < ROW_NAMES.length; r++) {
             HBox dataRow = new HBox();
             dataRow.getStyleClass().add(r % 2 == 0 ? "table-row-even" : "table-row-odd");
             dataRow.setPadding(new Insets(10, 12, 10, 12));
+
             Label nameCell = new Label(ROW_NAMES[r]);
             nameCell.getStyleClass().add("table-cell");
             nameCell.setPrefWidth(colWidths[0]);
             nameCell.setMinWidth(colWidths[0]);
             dataRow.getChildren().add(nameCell);
+
             for (int c = 0; c < 5; c++) {
                 tableCells[r][c] = new Label("-");
                 tableCells[r][c].getStyleClass().add("table-cell");
                 if (c == 2) tableCells[r][c].getStyleClass().add("breaker-size");
-                if (c == 3) tableCells[r][c].getStyleClass().add(
-                    BREAKER_TYPES[r].equals("DC") ? "badge-dc" : "badge-ac");
+                if (c == 3) tableCells[r][c].getStyleClass().add(r < 3 ? "badge-dc" : "badge-ac");
                 tableCells[r][c].setPrefWidth(colWidths[c + 1]);
                 tableCells[r][c].setMinWidth(colWidths[c + 1]);
                 dataRow.getChildren().add(tableCells[r][c]);
@@ -97,51 +96,51 @@ public class Step6BreakerSizing implements WizardShell.StepView {
     }
 
     private VBox buildOptionalComponents() {
-        Label title = new Label("🛡  Optional Protection Components");
+        Label title = new Label("Optional Protection Components");
         title.getStyleClass().add("section-title");
 
         HBox row1 = new HBox(12,
-            protCard("⚡", "DC Surge Protection Device (SPD)",
-                "Location", "PV Array to Inverter DC input",
-                "Type",     "Type II DC SPD",
-                "Voltage",  "600V DC",
-                "Purpose",  "Lightning & surge protection"),
-            protCard("⚡", "AC Surge Protection Device (SPD)",
-                "Location", "Inverter AC output / Main panel",
-                "Type",     "Type II AC SPD",
-                "Voltage",  "275V AC (single phase)",
-                "Purpose",  "Grid surge & transient protection")
+            protCard("DC Surge Protection Device (SPD)",
+                "Location", "PV array to SCC",
+                "Type", "Type II DC SPD",
+                "Purpose", "Lightning and surge protection"),
+            protCard("AC Surge Protection Device (SPD)",
+                "Location", "Inverter AC output / main panel",
+                "Type", "Type II AC SPD",
+                "Purpose", "Grid surge and transient protection")
         );
         HBox row2 = new HBox(12,
-            protCard("⇄", "Automatic Transfer Switch (ATS)",
-                "Location", "Between inverter output & grid/genset",
-                "Rating",   "Based on AC output current",
-                "Poles",    "2P (single phase) / 4P (three phase)",
-                "Purpose",  "Auto switch between solar & grid"),
-            protCard("⇢", "DC Isolator / Disconnect Switch",
-                "Location", "PV array & battery to inverter",
-                "PV Iso.",  "Isc × 1.25 A, 600V DC",
-                "Batt Iso.","Battery current × 1.25 A",
-                "Purpose",  "Safe manual disconnect for maintenance")
+            protCard("Automatic Transfer Switch (ATS)",
+                "Location", "Between inverter output and grid/genset",
+                "Rating", "Based on AC output current",
+                "Purpose", "Automatic source transfer"),
+            protCard("DC Isolator / Disconnect Switch",
+                "Location", "PV array, SCC, and battery side",
+                "Rating", "Based on each DC phase current",
+                "Purpose", "Manual maintenance disconnect")
         );
         row1.getChildren().forEach(n -> HBox.setHgrow(n, Priority.ALWAYS));
         row2.getChildren().forEach(n -> HBox.setHgrow(n, Priority.ALWAYS));
-
-        HBox info = UiUtils.formulaBanner(
-            "These components are highly recommended for safety and code compliance.");
-        return new VBox(12, title, row1, row2, info);
+        return new VBox(12, title, row1, row2);
     }
 
-    private VBox protCard(String icon, String title, String... kvPairs) {
-        Label t = new Label(icon + "  " + title); t.getStyleClass().add("specs-title");
-        VBox card = new VBox(0); card.getStyleClass().add("specs-card"); card.setPadding(new Insets(14));
+    private VBox protCard(String title, String... kvPairs) {
+        Label t = new Label(title);
+        t.getStyleClass().add("specs-title");
+        VBox card = new VBox(0);
+        card.getStyleClass().add("specs-card");
+        card.setPadding(new Insets(14));
         card.getChildren().add(t);
         for (int i = 0; i < kvPairs.length; i += 2) {
-            Label k = new Label(kvPairs[i]);   k.getStyleClass().add("spec-key");
-            Label v = new Label(kvPairs[i+1]); v.getStyleClass().addAll("spec-value", "spec-highlight");
-            Region sp = new Region(); HBox.setHgrow(sp, Priority.ALWAYS);
+            Label k = new Label(kvPairs[i]);
+            k.getStyleClass().add("spec-key");
+            Label v = new Label(kvPairs[i + 1]);
+            v.getStyleClass().addAll("spec-value", "spec-highlight");
+            Region sp = new Region();
+            HBox.setHgrow(sp, Priority.ALWAYS);
             HBox row = new HBox(k, sp, v);
-            row.getStyleClass().add("spec-row"); row.setPadding(new Insets(7, 0, 7, 0));
+            row.getStyleClass().add("spec-row");
+            row.setPadding(new Insets(7, 0, 7, 0));
             card.getChildren().add(row);
         }
         HBox.setHgrow(card, Priority.ALWAYS);
@@ -150,37 +149,73 @@ public class Step6BreakerSizing implements WizardShell.StepView {
 
     private void recalculate() {
         CalcService.calculate(project);
-        double pvI   = project.getPanelIsc();
-        double battI = project.getResultDailyWh() > 0 && project.getBatteryVoltage() > 0
-            ? (project.getResultDailyWh() / project.getBatteryVoltage()) / 8.0 : 10;
-        double acI   = project.getResultInverterMinW() / 220.0;
-        double[] currents = { pvI, battI, acI };
 
-        for (int r = 0; r < 3; r++) {
-            double c    = currents[r];
-            double x125 = c * 1.25;
-            int    size = CalcService.breakerSize(c);
-            tableCells[r][0].setText(UiUtils.fmt1(c));
-            tableCells[r][1].setText(UiUtils.fmt1(x125));
-            tableCells[r][2].setText(size + "A");
-            tableCells[r][3].setText(BREAKER_TYPES[r]);
-            tableCells[r][4].setText(VOLTAGE_RATINGS[r]);
-        }
+        double inverterWatts = inverterWatts();
+        double batteryVoltage = project.getBatteryVoltage();
+
+        double phase1Current = project.getResultArrayIsc();
+        double phase1Minimum = phase1Current * 1.25 * 1.25;
+
+        double phase2Current = phase2Current();
+        double phase2Minimum = phase2Current * 1.25;
+
+        double phase3Current = batteryVoltage > 0 ? inverterWatts / batteryVoltage : 0;
+        double phase3Minimum = phase3Current * 1.25;
+
+        double phase4Current = inverterWatts / 220.0;
+        double phase4Minimum = phase4Current * 1.25;
+
+        fillRow(0, phase1Current, phase1Minimum, CalcService.standardBreakerSize(phase1Minimum), "DC MCB", "PV DC");
+        fillRow(1, phase2Current, phase2Minimum, CalcService.standardBreakerSize(phase2Minimum), "DC MCB", UiUtils.fmt0(batteryVoltage) + "V DC");
+        fillRow(2, phase3Current, phase3Minimum, CalcService.standardBreakerSize(phase3Minimum), "DC MCB", UiUtils.fmt0(batteryVoltage) + "V DC");
+        fillRow(3, phase4Current, phase4Minimum, CalcService.standardBreakerSize(phase4Minimum), "AC MCB", "220V AC");
 
         formulaLbl.setText(
-            "Formula: Breaker = Current × 1.25 → round up to next standard size (10, 15, 20, 25, 30, 40, 50, 60, 80, 100A…)");
+            "Phase 1: Isc_adjusted x 1.25 x 1.25. Phase 2: SCC rated current x 1.25 preferred. Phase 3/4: inverter current x 1.25.");
         formulaLbl.getStyleClass().add("formula-text");
     }
 
-    private HBox buildNavRow() {
-        Button back = new Button("← BACK"); back.getStyleClass().add("nav-back-btn"); back.setOnAction(e -> shell.prevStep());
-        Button next = new Button("VIEW REPORT →"); next.getStyleClass().add("nav-next-btn"); next.setOnAction(e -> shell.nextStep());
-        Region sp = new Region(); HBox.setHgrow(sp, Priority.ALWAYS);
-        return new HBox(8, back, sp, next) {{ setPadding(new Insets(16, 0, 0, 0)); }};
+    private double phase2Current() {
+        if (project.getChargeControllerRatedCurrent() > 0) {
+            return project.getChargeControllerRatedCurrent();
+        }
+        return project.getBatteryVoltage() > 0
+            ? project.getResultTotalPvW() / project.getBatteryVoltage()
+            : 0;
     }
 
-    @Override public Node   getRoot()      { return root; }
-    @Override public String getStepTitle() { return "Breaker Sizing"; }
-    @Override public void   onEnter()      { recalculate(); }
-    @Override public void   onLeave()      {}
+    private double inverterWatts() {
+        return project.getInverterRatedPower() > 0
+            ? project.getInverterRatedPower()
+            : project.getResultInverterMinW();
+    }
+
+    private void fillRow(int row, double current, double formulaCurrent, int breakerSize, String type, String voltage) {
+        tableCells[row][0].setText(UiUtils.fmt1(current));
+        tableCells[row][1].setText(UiUtils.fmt1(formulaCurrent));
+        tableCells[row][2].setText(breakerSize + "A");
+        tableCells[row][3].setText(type);
+        tableCells[row][4].setText(voltage);
+    }
+
+    private HBox buildNavRow() {
+        Button back = new Button("BACK");
+        back.getStyleClass().add("nav-back-btn");
+        back.setOnAction(e -> shell.prevStep());
+
+        Button next = new Button("VIEW REPORT");
+        next.getStyleClass().add("nav-next-btn");
+        next.setOnAction(e -> shell.nextStep());
+
+        Region sp = new Region();
+        HBox.setHgrow(sp, Priority.ALWAYS);
+        HBox row = new HBox(8, back, sp, next);
+        row.setPadding(new Insets(16, 0, 0, 0));
+        return row;
+    }
+
+    @Override public Node getRoot() { return root; }
+    @Override public String getStepTitle() { return "Circuit Breakers"; }
+    @Override public void onEnter() { recalculate(); }
+    @Override public void onLeave() {}
 }

@@ -13,19 +13,18 @@ import javafx.scene.layout.*;
 import java.util.List;
 
 /**
- * Step 7 — Summary Report
- * Compiles all results from all steps into one readable report.
+ * Summary report for the 8-stage solar system setup flow.
  */
 public class Step7Summary implements WizardShell.StepView {
 
     private final SolarProject project;
-    private final WizardShell  shell;
-    private final ScrollPane   root = new ScrollPane();
-    private final VBox         mainContent = new VBox(20);
+    private final WizardShell shell;
+    private final ScrollPane root = new ScrollPane();
+    private final VBox mainContent = new VBox(20);
 
     public Step7Summary(SolarProject project, WizardShell shell) {
         this.project = project;
-        this.shell   = shell;
+        this.shell = shell;
         root.setContent(mainContent);
         root.setFitToWidth(true);
         root.getStyleClass().add("step-scroll");
@@ -38,8 +37,7 @@ public class Step7Summary implements WizardShell.StepView {
 
         CalcService.calculate(project);
 
-        // Header
-        Label titleLbl = new Label("📋  Solar System Summary Report");
+        Label titleLbl = new Label("Solar System Summary Report");
         titleLbl.getStyleClass().add("report-title");
         Label projLbl = new Label("Project: " + project.getProjectName());
         projLbl.getStyleClass().add("report-subtitle");
@@ -47,11 +45,9 @@ public class Step7Summary implements WizardShell.StepView {
         header.setAlignment(Pos.CENTER);
         mainContent.getChildren().add(header);
 
-        // Validation banners
         List<ValidationService.Warning> allWarnings = ValidationService.validateAll(project);
         if (allWarnings.isEmpty()) {
-            mainContent.getChildren().add(
-                UiUtils.successBanner("✔  All checks passed — your system design looks good!"));
+            mainContent.getChildren().add(UiUtils.successBanner("All checks passed for the current inputs."));
         } else {
             for (ValidationService.Warning w : allWarnings) {
                 mainContent.getChildren().add(
@@ -61,90 +57,95 @@ public class Step7Summary implements WizardShell.StepView {
             }
         }
 
-        // ── Step 1: Load ──────────────────────────────────────────────────────
         double dailyWh = project.getResultDailyWh();
-        mainContent.getChildren().add(sectionCard("⚡  Step 1: Load Analysis",
-            row("Input Mode",        project.getLoadMode().name()),
-            row("Sun Peak Hours",    UiUtils.fmt1(project.getSunPeakHours()) + " h/day"),
-            row("Daily Consumption", UiUtils.fmt0(dailyWh) + " Wh  (" + UiUtils.fmt2(dailyWh / 1000) + " kWh)"),
-            row("Hourly Average",    UiUtils.fmt0(CalcService.hourlyAvgWatts(dailyWh)) + " W")
+        mainContent.getChildren().add(sectionCard("Step 1: Appliances and Wattage",
+            row("Input Mode", project.getLoadMode().name()),
+            row("Appliance Rows", String.valueOf(project.getAppliances().size())),
+            row("Total Daily Consumption", UiUtils.fmt0(dailyWh) + " Wh"),
+            row("Motor Load Surge Basis", UiUtils.fmt0(CalcService.adjustedLoadWatts(project.getAppliances())) + " W adjusted")
         ));
 
-        // ── Step 2: Panels ────────────────────────────────────────────────────
-        String panelName = (project.getPanelBrand() + " " + project.getPanelModel()).trim();
-        mainContent.getChildren().add(sectionCard("☀  Step 2: Solar Panel Sizing",
-            row("Panel",             panelName.isBlank() ? "Not specified" : panelName),
-            row("Wattage",           UiUtils.fmt0(project.getPanelWattage()) + " W"),
-            row("Voc",               UiUtils.fmt2(project.getPanelVoc()) + " V"),
-            row("Isc",               UiUtils.fmt2(project.getPanelIsc()) + " A"),
-            row("Safety Factor",     project.isPanelSafetyFactor() ? "×1.25 applied" : "Not applied"),
-            row("Required PV Power", UiUtils.fmt0(project.getResultRequiredPvW()) + " W"),
-            row("Panels Needed",     project.getResultPanelsNeeded() + " pcs"),
-            row("Total PV Array",    UiUtils.fmt0(project.getResultTotalPvW()) + " W")
+        mainContent.getChildren().add(sectionCard("Step 2: Total Energy Requirement",
+            row("System Loss Buffer", UiUtils.fmt1(project.getSystemLossPercent()) + "%"),
+            row("Expected Daily Consumption", UiUtils.fmt0(project.getResultExpectedDailyWh()) + " Wh/day"),
+            row("Days of Autonomy", UiUtils.fmt1(project.getAutonomyDays()) + " days"),
+            row("Total Energy Requirement", UiUtils.fmt0(project.getResultTotalEnergyRequirementWh()) + " Wh")
         ));
 
-        // ── Step 3: Inverter ──────────────────────────────────────────────────
-        double peak       = CalcService.peakLoadWatts(dailyWh, project.getSunPeakHours());
-        double withMargin = CalcService.inverterWithMargin(peak);
-        String invName    = (project.getInverterBrand() + " " + project.getInverterModel()).trim();
-        mainContent.getChildren().add(sectionCard("🔌  Step 3: Inverter Sizing",
-            row("Inverter",          invName.isBlank() ? "Not specified" : invName),
-            row("Rated Power",       UiUtils.fmt0(project.getInverterRatedPower()) + " W"),
-            row("Max PV Input",      UiUtils.fmt0(project.getInverterMaxPvInput()) + " W"),
-            row("System Voltage",    UiUtils.fmt0(project.getInverterSysVoltage()) + " V"),
-            row("Battery Range",     UiUtils.fmt0(project.getInverterBattMinV()) + "–" + UiUtils.fmt0(project.getInverterBattMaxV()) + "V"),
-            row("MPPT Count",        String.valueOf(project.getInverterMpptCount())),
-            row("Peak Load",         UiUtils.fmt0(peak) + " W"),
-            row("With 20% Margin",   UiUtils.fmt0(withMargin) + " W")
-        ));
-
-        // ── Step 4: Battery ───────────────────────────────────────────────────
-        int    batteries = project.getResultBatteriesNeeded();
-        double totalWh   = batteries * project.getBatteryVoltage() * project.getBatteryCapacityAh();
-        String battName  = (project.getBatteryBrand() + " " + project.getBatteryModel()).trim();
-        mainContent.getChildren().add(sectionCard("🔋  Step 4: Battery Sizing",
-            row("Battery",           battName.isBlank() ? "Custom Battery" : battName),
-            row("Voltage",           UiUtils.fmt1(project.getBatteryVoltage()) + " V"),
-            row("Capacity per Unit", UiUtils.fmt0(project.getBatteryCapacityAh()) + " Ah"),
-            row("DOD",               UiUtils.fmt0(project.getBatteryDod() * 100) + "%"),
-            row("Autonomy",          UiUtils.fmt0(project.getAutonomyHours()) + " hours"),
+        int batteries = project.getResultBatteriesNeeded();
+        double totalAh = batteries * project.getBatteryCapacityAh();
+        String battName = (project.getBatteryBrand() + " " + project.getBatteryModel()).trim();
+        mainContent.getChildren().add(sectionCard("Step 3: Battery Bank Sizing",
+            row("Battery", battName.isBlank() ? "Custom Battery" : battName),
+            row("Nominal Voltage", UiUtils.fmt1(project.getBatteryVoltage()) + " V"),
+            row("Capacity per Battery", UiUtils.fmt0(project.getBatteryCapacityAh()) + " Ah"),
+            row("DOD", UiUtils.fmt0(project.getBatteryDod() * 100) + "%"),
             row("Required Capacity", UiUtils.fmt0(project.getResultBatteryAh()) + " Ah"),
-            row("Batteries Needed",  batteries + " pcs"),
-            row("Total Energy",      UiUtils.fmt0(totalWh) + " Wh")
+            row("Batteries Needed", batteries + " pcs"),
+            row("Total AH of Bank", UiUtils.fmt0(totalAh) + " Ah"),
+            row("Recommended Energy Consumption", UiUtils.fmt0(project.getResultRecommendedEnergyWh()) + " Wh")
         ));
 
-        // ── Step 5: Wire Sizing ───────────────────────────────────────────────
-        double pvI   = project.getPanelIsc();
-        double battI = dailyWh > 0 && project.getBatteryVoltage() > 0
-            ? (dailyWh / project.getBatteryVoltage()) / 8.0 : 0;
-        double acI   = project.getResultInverterMinW() / 220.0;
-        double vdf   = project.getWireVoltageDrop() / 100.0;
-
-        AwgResult pvAwg   = calcAwg(pvI,   project.getPanelWattage() > 0 ? project.getPanelWattage() / Math.max(pvI, 0.01) : 12, project.getWirePvToInverterM(),      vdf);
-        AwgResult battAwg = calcAwg(battI, project.getBatteryVoltage(),   project.getWireBatteryToInverterM(), vdf);
-        AwgResult acAwg   = calcAwg(acI,   220.0,                         project.getWireInverterToLoadM(),    vdf);
-
-        mainContent.getChildren().add(sectionCard("〰  Step 5: Wire Sizing",
-            row("PV to Inverter",     UiUtils.fmt0(project.getWirePvToInverterM()) + " m  →  AWG " + pvAwg.awg + " (" + pvAwg.mm2 + " mm²)"),
-            row("Battery to Inverter",UiUtils.fmt0(project.getWireBatteryToInverterM()) + " m  →  AWG " + battAwg.awg + " (" + battAwg.mm2 + " mm²)"),
-            row("Inverter to Load",   UiUtils.fmt0(project.getWireInverterToLoadM()) + " m  →  AWG " + acAwg.awg + " (" + acAwg.mm2 + " mm²)"),
-            row("Voltage Drop Limit", UiUtils.fmt1(project.getWireVoltageDrop()) + "%")
+        String panelName = (project.getPanelBrand() + " " + project.getPanelModel()).trim();
+        mainContent.getChildren().add(sectionCard("Step 4: Solar Panel Sizing",
+            row("Panel", panelName.isBlank() ? "Not specified" : panelName),
+            row("Panel Pmax", UiUtils.fmt0(project.getPanelWattage()) + " W"),
+            row("Panel Vmp / Voc", UiUtils.fmt2(project.getPanelVmp()) + " V / " + UiUtils.fmt2(project.getPanelVoc()) + " V"),
+            row("Panel Imp / Isc", UiUtils.fmt2(project.getPanelImp()) + " A / " + UiUtils.fmt2(project.getPanelIsc()) + " A"),
+            row("Panels Needed", project.getResultPanelsNeeded() + " pcs"),
+            row("Total Array Watts", UiUtils.fmt0(project.getResultTotalPvW()) + " W"),
+            row("Wiring Configuration", project.getPanelWiring().name())
         ));
 
-        // ── Step 6: Breakers ──────────────────────────────────────────────────
-        mainContent.getChildren().add(sectionCard("⚡  Step 6: Breaker Sizing",
-            row("PV DC Breaker",   CalcService.breakerSize(pvI)   + " A DC  (500–1000V DC)"),
-            row("Battery DC MCCB", CalcService.breakerSize(battI) + " A DC  (48–60V DC)"),
-            row("AC Breaker",      CalcService.breakerSize(acI)   + " A AC  (220–240V AC)")
+        String sccName = (project.getChargeControllerBrand() + " " + project.getChargeControllerModel()).trim();
+        mainContent.getChildren().add(sectionCard("Step 5: Solar Charge Controller Sizing",
+            row("Controller", sccName.isBlank() ? "Not specified" : sccName),
+            row("Type", project.getChargeControllerType().name()),
+            row("Required SCC Current", UiUtils.fmt1(project.getResultRequiredSccCurrent()) + " A"),
+            row("Rated Charge Current", UiUtils.fmt1(project.getChargeControllerRatedCurrent()) + " A"),
+            row("Array Voc", UiUtils.fmt1(project.getResultArrayVoc()) + " V"),
+            row("Max PV Input Voltage", UiUtils.fmt1(project.getChargeControllerMaxPvVoltage()) + " V"),
+            row("Max PV Input Power", UiUtils.fmt0(project.getChargeControllerMaxPvPower()) + " W")
+        ));
+
+        String invName = (project.getInverterBrand() + " " + project.getInverterModel()).trim();
+        mainContent.getChildren().add(sectionCard("Step 6: Inverter Sizing",
+            row("Inverter", invName.isBlank() ? "Not specified" : invName),
+            row("Adjusted Appliance Load", UiUtils.fmt0(CalcService.adjustedLoadWatts(project.getAppliances())) + " W"),
+            row("Minimum Inverter Watts", UiUtils.fmt0(project.getResultInverterMinW()) + " W"),
+            row("Selected Rated Power", UiUtils.fmt0(project.getInverterRatedPower()) + " W"),
+            row("Input Voltage", UiUtils.fmt0(project.getInverterSysVoltage()) + " V")
+        ));
+
+        double inverterWatts = inverterWatts();
+        double battV = project.getBatteryVoltage();
+        AwgResult phase1 = calcAwg(project.getResultArrayImp(), project.getResultArrayVmp(), project.getWirePvToInverterM(), project.getWireVoltageDrop());
+        AwgResult phase2 = calcAwg(battV > 0 ? project.getResultTotalPvW() / battV : 0, battV, project.getWireSccToBatteryM(), project.getWireVoltageDrop());
+        AwgResult phase3 = calcAwg(battV > 0 ? inverterWatts / battV : 0, battV, project.getWireBatteryToInverterM(), project.getWireVoltageDrop());
+        AwgResult phase4 = calcAwg(inverterWatts / 220.0, 220.0, project.getWireInverterToLoadM(), 1.0);
+
+        mainContent.getChildren().add(sectionCard("Step 7: Wire Sizing",
+            row("Panels to SCC", wireText(project.getWirePvToInverterM(), phase1)),
+            row("SCC to Battery", wireText(project.getWireSccToBatteryM(), phase2)),
+            row("Battery to Inverter", wireText(project.getWireBatteryToInverterM(), phase3)),
+            row("Inverter to AC Load", wireText(project.getWireInverterToLoadM(), phase4))
+        ));
+
+        mainContent.getChildren().add(sectionCard("Step 8: Circuit Breaker Sizing",
+            row("Panels to SCC", breakerText(project.getResultArrayIsc() * 1.25 * 1.25, "DC MCB")),
+            row("SCC to Battery", breakerText(phase2BreakerMinimum(), "DC MCB")),
+            row("Battery to Inverter", breakerText((battV > 0 ? inverterWatts / battV : 0) * 1.25, "DC MCB")),
+            row("Inverter to AC Load", breakerText((inverterWatts / 220.0) * 1.25, "AC MCB"))
         ));
 
         mainContent.getChildren().add(buildNavRow());
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
     private VBox sectionCard(String title, Node... rows) {
-        Label t = new Label(title); t.getStyleClass().add("report-section-title");
-        Separator sep = new Separator(); sep.getStyleClass().add("report-sep");
+        Label t = new Label(title);
+        t.getStyleClass().add("report-section-title");
+        Separator sep = new Separator();
+        sep.getStyleClass().add("report-sep");
         VBox card = new VBox(0, t, sep);
         card.getStyleClass().add("report-card");
         card.setPadding(new Insets(16));
@@ -153,9 +154,12 @@ public class Step7Summary implements WizardShell.StepView {
     }
 
     private HBox row(String key, String value) {
-        Label k = new Label(key);   k.getStyleClass().add("report-key");
-        Label v = new Label(value); v.getStyleClass().add("report-value");
-        Region sp = new Region(); HBox.setHgrow(sp, Priority.ALWAYS);
+        Label k = new Label(key);
+        k.getStyleClass().add("report-key");
+        Label v = new Label(value);
+        v.getStyleClass().add("report-value");
+        Region sp = new Region();
+        HBox.setHgrow(sp, Priority.ALWAYS);
         HBox row = new HBox(k, sp, v);
         row.getStyleClass().add("report-row");
         row.setPadding(new Insets(8, 4, 8, 4));
@@ -164,22 +168,52 @@ public class Step7Summary implements WizardShell.StepView {
 
     private record AwgResult(int awg, String mm2) {}
 
-    private AwgResult calcAwg(double current, double voltage, double distM, double vDropFrac) {
+    private AwgResult calcAwg(double current, double voltage, double distM, double voltageDropPct) {
         double distFt = CalcService.metresToFeet(distM);
-        double vdi    = CalcService.vdi(current, distFt, voltage, vDropFrac);
+        double vdi = CalcService.vdi(current, distFt, voltage, voltageDropPct);
         CalcService.AwgEntry e = CalcService.lookupAwg(vdi);
         return new AwgResult(e.awg(), UiUtils.fmt2(e.areaMm2()));
     }
 
-    private HBox buildNavRow() {
-        Button back  = new Button("← BACK"); back.getStyleClass().add("nav-back-btn"); back.setOnAction(e -> shell.prevStep());
-        Button newP  = new Button("⊞ New Project"); newP.getStyleClass().add("nav-next-btn"); newP.setOnAction(e -> shell.navigateTo(0));
-        Region sp = new Region(); HBox.setHgrow(sp, Priority.ALWAYS);
-        return new HBox(8, back, sp, newP) {{ setPadding(new Insets(24, 0, 0, 0)); }};
+    private String wireText(double distanceM, AwgResult awg) {
+        return UiUtils.fmt0(distanceM) + " m -> AWG " + awg.awg() + " (" + awg.mm2() + " mm2)";
     }
 
-    @Override public Node   getRoot()      { return root; }
+    private String breakerText(double minimumCurrent, String type) {
+        return CalcService.standardBreakerSize(minimumCurrent) + " A " + type;
+    }
+
+    private double phase2BreakerMinimum() {
+        double current = project.getChargeControllerRatedCurrent() > 0
+            ? project.getChargeControllerRatedCurrent()
+            : (project.getBatteryVoltage() > 0 ? project.getResultTotalPvW() / project.getBatteryVoltage() : 0);
+        return current * 1.25;
+    }
+
+    private double inverterWatts() {
+        return project.getInverterRatedPower() > 0
+            ? project.getInverterRatedPower()
+            : project.getResultInverterMinW();
+    }
+
+    private HBox buildNavRow() {
+        Button back = new Button("BACK");
+        back.getStyleClass().add("nav-back-btn");
+        back.setOnAction(e -> shell.prevStep());
+
+        Button newP = new Button("New Project");
+        newP.getStyleClass().add("nav-next-btn");
+        newP.setOnAction(e -> shell.navigateTo(0));
+
+        Region sp = new Region();
+        HBox.setHgrow(sp, Priority.ALWAYS);
+        HBox row = new HBox(8, back, sp, newP);
+        row.setPadding(new Insets(24, 0, 0, 0));
+        return row;
+    }
+
+    @Override public Node getRoot() { return root; }
     @Override public String getStepTitle() { return "Summary Report"; }
-    @Override public void   onEnter()      { rebuild(); }
-    @Override public void   onLeave()      {}
+    @Override public void onEnter() { rebuild(); }
+    @Override public void onLeave() {}
 }

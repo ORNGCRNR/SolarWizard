@@ -41,6 +41,7 @@ public class ProjectSerializer {
         // Step 1
         w(lines, "loadMode",             p.getLoadMode().name());
         w(lines, "sunPeakHours",         p.getSunPeakHours());
+        w(lines, "systemLossPercent",    p.getSystemLossPercent());
         w(lines, "monthlyKwh",           p.getMonthlyKwh());
         w(lines, "monthlyBill",          p.getMonthlyBill());
         w(lines, "ratePerKwh",           p.getRatePerKwh());
@@ -66,6 +67,15 @@ public class ProjectSerializer {
         w(lines, "panelImp",             p.getPanelImp());
         w(lines, "panelEfficiency",      p.getPanelEfficiency());
         w(lines, "panelSafetyFactor",    p.isPanelSafetyFactor());
+        w(lines, "panelWiring",          p.getPanelWiring().name());
+
+        // Step 5
+        w(lines, "chargeControllerType",         p.getChargeControllerType().name());
+        w(lines, "chargeControllerBrand",        p.getChargeControllerBrand());
+        w(lines, "chargeControllerModel",        p.getChargeControllerModel());
+        w(lines, "chargeControllerRatedCurrent", p.getChargeControllerRatedCurrent());
+        w(lines, "chargeControllerMaxPvVoltage", p.getChargeControllerMaxPvVoltage());
+        w(lines, "chargeControllerMaxPvPower",   p.getChargeControllerMaxPvPower());
 
         // Step 3
         w(lines, "inverterBrand",        p.getInverterBrand());
@@ -91,6 +101,7 @@ public class ProjectSerializer {
 
         // Step 5
         w(lines, "wirePvToInverterM",      p.getWirePvToInverterM());
+        w(lines, "wireSccToBatteryM",      p.getWireSccToBatteryM());
         w(lines, "wireBatteryToInverterM", p.getWireBatteryToInverterM());
         w(lines, "wireInverterToLoadM",    p.getWireInverterToLoadM());
         w(lines, "wireVoltageDrop",        p.getWireVoltageDrop());
@@ -128,6 +139,7 @@ public class ProjectSerializer {
                     case "projectName"          -> p.setProjectName(val);
                     case "loadMode"             -> p.setLoadMode(SolarProject.LoadMode.valueOf(val));
                     case "sunPeakHours"         -> p.setSunPeakHours(d(val));
+                    case "systemLossPercent"    -> p.setSystemLossPercent(d(val));
                     case "monthlyKwh"           -> p.setMonthlyKwh(d(val));
                     case "monthlyBill"          -> p.setMonthlyBill(d(val));
                     case "ratePerKwh"           -> p.setRatePerKwh(d(val));
@@ -141,6 +153,13 @@ public class ProjectSerializer {
                     case "panelImp"             -> p.setPanelImp(d(val));
                     case "panelEfficiency"      -> p.setPanelEfficiency(d(val));
                     case "panelSafetyFactor"    -> p.setPanelSafetyFactor(b(val));
+                    case "panelWiring"          -> p.setPanelWiring(SolarProject.PanelWiring.valueOf(val));
+                    case "chargeControllerType" -> p.setChargeControllerType(SolarProject.ChargeControllerType.valueOf(val));
+                    case "chargeControllerBrand" -> p.setChargeControllerBrand(val);
+                    case "chargeControllerModel" -> p.setChargeControllerModel(val);
+                    case "chargeControllerRatedCurrent" -> p.setChargeControllerRatedCurrent(d(val));
+                    case "chargeControllerMaxPvVoltage" -> p.setChargeControllerMaxPvVoltage(d(val));
+                    case "chargeControllerMaxPvPower" -> p.setChargeControllerMaxPvPower(d(val));
                     case "inverterBrand"        -> p.setInverterBrand(val);
                     case "inverterModel"        -> p.setInverterModel(val);
                     case "inverterRatedPower"   -> p.setInverterRatedPower(d(val));
@@ -160,6 +179,7 @@ public class ProjectSerializer {
                     case "batteryDod"           -> p.setBatteryDod(d(val));
                     case "autonomyHours"        -> p.setAutonomyHours(d(val));
                     case "wirePvToInverterM"    -> p.setWirePvToInverterM(d(val));
+                    case "wireSccToBatteryM"    -> p.setWireSccToBatteryM(d(val));
                     case "wireBatteryToInverterM" -> p.setWireBatteryToInverterM(d(val));
                     case "wireInverterToLoadM"  -> p.setWireInverterToLoadM(d(val));
                     case "wireVoltageDrop"      -> p.setWireVoltageDrop(d(val));

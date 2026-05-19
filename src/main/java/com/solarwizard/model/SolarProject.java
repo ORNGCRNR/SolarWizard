@@ -12,17 +12,20 @@ public class SolarProject {
     // ── Project metadata ──────────────────────────────────────────────────────
     private String projectName = "New Project";
 
-    // ── Step 1: Load Analysis ─────────────────────────────────────────────────
+    // ── Step 1-2: Load and energy requirement ─────────────────────────────────
     public enum LoadMode { DIRECT, BILL, DEVICE }
+    public enum PanelWiring { SERIES, PARALLEL }
+    public enum ChargeControllerType { PWM, MPPT }
 
-    private LoadMode loadMode     = LoadMode.DIRECT;
+    private LoadMode loadMode     = LoadMode.DEVICE;
     private double sunPeakHours   = 4.0;
+    private double systemLossPercent = 30.0;
     private double monthlyKwh     = 0;
     private double monthlyBill    = 0;
     private double ratePerKwh     = 0;
     private final ObservableList<Appliance> appliances = FXCollections.observableArrayList();
 
-    // ── Step 2: Solar Panel Sizing (Custom only) ──────────────────────────────
+    // ── Step 4: Solar Panel Sizing (Custom only) ──────────────────────────────
     private String  panelBrand      = "";
     private String  panelModel      = "";
     private double  panelWattage    = 0;
@@ -32,13 +35,22 @@ public class SolarProject {
     private double  panelImp        = 0;
     private double  panelEfficiency = 0;
     private boolean panelSafetyFactor = true;
+    private PanelWiring panelWiring = PanelWiring.PARALLEL;
 
-    // ── Step 3: Inverter Sizing (Custom) ──────────────────────────────────────
+    // Solar charge controller sizing
+    private ChargeControllerType chargeControllerType = ChargeControllerType.MPPT;
+    private String  chargeControllerBrand = "";
+    private String  chargeControllerModel = "";
+    private double  chargeControllerRatedCurrent = 0;
+    private double  chargeControllerMaxPvVoltage = 0;
+    private double  chargeControllerMaxPvPower = 0;
+
+    // ── Step 6: Inverter Sizing (Custom) ──────────────────────────────────────
     private String  inverterBrand      = "";
     private String  inverterModel      = "";
     private double  inverterRatedPower = 0;   // W
     private double  inverterMaxPvInput = 0;   // W
-    private double  inverterSysVoltage = 48;  // V
+    private double  inverterSysVoltage = 12;  // V
     private double  inverterBattMinV   = 40;  // V
     private double  inverterBattMaxV   = 60;  // V
     private int     inverterMpptCount  = 1;
@@ -47,28 +59,38 @@ public class SolarProject {
     private double  inverterMaxPvPerMppt = 3500; // W
     private double  inverterAcOutput   = 0;   // W
 
-    // ── Step 4: Battery Sizing ────────────────────────────────────────────────
+    // ── Step 3: Battery Sizing ────────────────────────────────────────────────
     private String  batteryBrand      = "";
     private String  batteryModel      = "";
     private double  batteryVoltage    = 12;
     private double  batteryCapacityAh = 100;
     private double  batteryDod        = 0.50;
-    private double  autonomyHours     = 24;   // hours (was days)
+    private double  autonomyHours     = 48;   // stored as hours; UI presents days of autonomy
 
-    // ── Step 5: Wire Sizing ───────────────────────────────────────────────────
+    // ── Step 7: Wire Sizing ───────────────────────────────────────────────────
     private double wirePvToInverterM      = 10;
+    private double wireSccToBatteryM      = 2;
     private double wireBatteryToInverterM = 2;
     private double wireInverterToLoadM    = 15;
     private double wireVoltageDrop        = 2;
 
     // ── Computed results (set by CalcService) ─────────────────────────────────
     private double resultDailyWh        = 0;
+    private double resultExpectedDailyWh = 0;
+    private double resultTotalEnergyRequirementWh = 0;
     private double resultRequiredPvW    = 0;
     private int    resultPanelsNeeded   = 0;
     private double resultTotalPvW       = 0;
     private double resultInverterMinW   = 0;
     private double resultBatteryAh      = 0;
     private int    resultBatteriesNeeded= 0;
+    private double resultBatteryBankEnergyWh = 0;
+    private double resultRecommendedEnergyWh = 0;
+    private double resultArrayVoc       = 0;
+    private double resultArrayVmp       = 0;
+    private double resultArrayIsc       = 0;
+    private double resultArrayImp       = 0;
+    private double resultRequiredSccCurrent = 0;
 
     // ── Getters & Setters ─────────────────────────────────────────────────────
     public String    getProjectName()           { return projectName; }
@@ -78,6 +100,8 @@ public class SolarProject {
     public void      setLoadMode(LoadMode v)    { loadMode = v; }
     public double    getSunPeakHours()          { return sunPeakHours; }
     public void      setSunPeakHours(double v)  { sunPeakHours = v; }
+    public double    getSystemLossPercent()     { return systemLossPercent; }
+    public void      setSystemLossPercent(double v) { systemLossPercent = v; }
     public double    getMonthlyKwh()            { return monthlyKwh; }
     public void      setMonthlyKwh(double v)    { monthlyKwh = v; }
     public double    getMonthlyBill()           { return monthlyBill; }
@@ -104,6 +128,21 @@ public class SolarProject {
     public void      setPanelEfficiency(double v){ panelEfficiency = v; }
     public boolean   isPanelSafetyFactor()      { return panelSafetyFactor; }
     public void      setPanelSafetyFactor(boolean v){ panelSafetyFactor = v; }
+    public PanelWiring getPanelWiring()         { return panelWiring; }
+    public void      setPanelWiring(PanelWiring v){ panelWiring = v; }
+
+    public ChargeControllerType getChargeControllerType() { return chargeControllerType; }
+    public void      setChargeControllerType(ChargeControllerType v){ chargeControllerType = v; }
+    public String    getChargeControllerBrand() { return chargeControllerBrand; }
+    public void      setChargeControllerBrand(String v){ chargeControllerBrand = v; }
+    public String    getChargeControllerModel() { return chargeControllerModel; }
+    public void      setChargeControllerModel(String v){ chargeControllerModel = v; }
+    public double    getChargeControllerRatedCurrent(){ return chargeControllerRatedCurrent; }
+    public void      setChargeControllerRatedCurrent(double v){ chargeControllerRatedCurrent = v; }
+    public double    getChargeControllerMaxPvVoltage(){ return chargeControllerMaxPvVoltage; }
+    public void      setChargeControllerMaxPvVoltage(double v){ chargeControllerMaxPvVoltage = v; }
+    public double    getChargeControllerMaxPvPower(){ return chargeControllerMaxPvPower; }
+    public void      setChargeControllerMaxPvPower(double v){ chargeControllerMaxPvPower = v; }
 
     public String    getInverterBrand()         { return inverterBrand; }
     public void      setInverterBrand(String v) { inverterBrand = v; }
@@ -142,9 +181,13 @@ public class SolarProject {
     public void      setBatteryDod(double v)    { batteryDod = v; }
     public double    getAutonomyHours()         { return autonomyHours; }
     public void      setAutonomyHours(double v) { autonomyHours = v; }
+    public double    getAutonomyDays()          { return autonomyHours / 24.0; }
+    public void      setAutonomyDays(double v)  { autonomyHours = v * 24.0; }
 
     public double    getWirePvToInverterM()     { return wirePvToInverterM; }
     public void      setWirePvToInverterM(double v){ wirePvToInverterM = v; }
+    public double    getWireSccToBatteryM()     { return wireSccToBatteryM; }
+    public void      setWireSccToBatteryM(double v){ wireSccToBatteryM = v; }
     public double    getWireBatteryToInverterM(){ return wireBatteryToInverterM; }
     public void      setWireBatteryToInverterM(double v){ wireBatteryToInverterM = v; }
     public double    getWireInverterToLoadM()   { return wireInverterToLoadM; }
@@ -154,6 +197,10 @@ public class SolarProject {
 
     public double    getResultDailyWh()         { return resultDailyWh; }
     public void      setResultDailyWh(double v) { resultDailyWh = v; }
+    public double    getResultExpectedDailyWh() { return resultExpectedDailyWh; }
+    public void      setResultExpectedDailyWh(double v){ resultExpectedDailyWh = v; }
+    public double    getResultTotalEnergyRequirementWh(){ return resultTotalEnergyRequirementWh; }
+    public void      setResultTotalEnergyRequirementWh(double v){ resultTotalEnergyRequirementWh = v; }
     public double    getResultRequiredPvW()     { return resultRequiredPvW; }
     public void      setResultRequiredPvW(double v){ resultRequiredPvW = v; }
     public int       getResultPanelsNeeded()    { return resultPanelsNeeded; }
@@ -166,4 +213,18 @@ public class SolarProject {
     public void      setResultBatteryAh(double v){ resultBatteryAh = v; }
     public int       getResultBatteriesNeeded() { return resultBatteriesNeeded; }
     public void      setResultBatteriesNeeded(int v){ resultBatteriesNeeded = v; }
+    public double    getResultBatteryBankEnergyWh(){ return resultBatteryBankEnergyWh; }
+    public void      setResultBatteryBankEnergyWh(double v){ resultBatteryBankEnergyWh = v; }
+    public double    getResultRecommendedEnergyWh(){ return resultRecommendedEnergyWh; }
+    public void      setResultRecommendedEnergyWh(double v){ resultRecommendedEnergyWh = v; }
+    public double    getResultArrayVoc()        { return resultArrayVoc; }
+    public void      setResultArrayVoc(double v){ resultArrayVoc = v; }
+    public double    getResultArrayVmp()        { return resultArrayVmp; }
+    public void      setResultArrayVmp(double v){ resultArrayVmp = v; }
+    public double    getResultArrayIsc()        { return resultArrayIsc; }
+    public void      setResultArrayIsc(double v){ resultArrayIsc = v; }
+    public double    getResultArrayImp()        { return resultArrayImp; }
+    public void      setResultArrayImp(double v){ resultArrayImp = v; }
+    public double    getResultRequiredSccCurrent(){ return resultRequiredSccCurrent; }
+    public void      setResultRequiredSccCurrent(double v){ resultRequiredSccCurrent = v; }
 }

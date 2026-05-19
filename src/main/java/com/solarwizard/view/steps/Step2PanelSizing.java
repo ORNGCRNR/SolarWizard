@@ -10,7 +10,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 
 /**
- * Step 2 — Solar Panel Sizing (Custom input only, no FROM LIST).
+ * Step 4 - Solar Panel Sizing (custom input only, no FROM LIST).
  * Clean 3-column aligned field layout.
  */
 public class Step2PanelSizing implements WizardShell.StepView {
@@ -34,9 +34,8 @@ public class Step2PanelSizing implements WizardShell.StepView {
     private void build() {
         mainContent.setPadding(new Insets(24, 28, 24, 28));
         mainContent.getStyleClass().add("step-content");
-        mainContent.getChildren().add(UiUtils.stepTitle("☀", "Step 2: Solar Panel Sizing"));
+        mainContent.getChildren().add(UiUtils.stepTitle("4", "Step 4: Solar Panel Sizing"));
         mainContent.getChildren().add(buildForm());
-        mainContent.getChildren().add(buildSafetyToggle());
         mainContent.getChildren().add(buildResultTiles());
         HBox fb = UiUtils.formulaBanner(""); fb.getChildren().set(1, formulaLbl);
         mainContent.getChildren().add(fb);
@@ -71,8 +70,8 @@ public class Step2PanelSizing implements WizardShell.StepView {
         Spinner<Double> spVmp = numSp(project.getPanelVmp(),        0, 999,   0.01);
 
         spW  .valueProperty().addListener((o, a, n) -> { project.setPanelWattage(n); recalculate(); });
-        spVoc.valueProperty().addListener((o, a, n) -> { project.setPanelVoc(n); });
-        spVmp.valueProperty().addListener((o, a, n) -> { project.setPanelVmp(n); });
+        spVoc.valueProperty().addListener((o, a, n) -> { project.setPanelVoc(n); recalculate(); });
+        spVmp.valueProperty().addListener((o, a, n) -> { project.setPanelVmp(n); recalculate(); });
 
         HBox row1 = new HBox(12,
             UiUtils.labeledField("Wattage (W)", spW,   "Rated power output of the panel in Watts"),
@@ -85,8 +84,8 @@ public class Step2PanelSizing implements WizardShell.StepView {
         Spinner<Double> spImp = numSp(project.getPanelImp(),        0, 999,   0.01);
         Spinner<Double> spEff = numSp(project.getPanelEfficiency(), 0, 100,   0.1);
 
-        spIsc.valueProperty().addListener((o, a, n) -> project.setPanelIsc(n));
-        spImp.valueProperty().addListener((o, a, n) -> project.setPanelImp(n));
+        spIsc.valueProperty().addListener((o, a, n) -> { project.setPanelIsc(n); recalculate(); });
+        spImp.valueProperty().addListener((o, a, n) -> { project.setPanelImp(n); recalculate(); });
         spEff.valueProperty().addListener((o, a, n) -> project.setPanelEfficiency(n));
 
         HBox row2 = new HBox(12,
@@ -95,7 +94,32 @@ public class Step2PanelSizing implements WizardShell.StepView {
             UiUtils.labeledField("Efficiency (%)", spEff, "How much sunlight the panel converts to electricity"));
         row2.getChildren().forEach(n -> HBox.setHgrow(n, Priority.ALWAYS));
 
-        VBox form = new VBox(14, brandRow, row1, row2);
+        Spinner<Double> spPsh = numSp(project.getSunPeakHours(), 0.5, 12, 0.5);
+        spPsh.valueProperty().addListener((o, a, n) -> {
+            project.setSunPeakHours(n);
+            recalculate();
+        });
+
+        ComboBox<SolarProject.PanelWiring> wiringBox = new ComboBox<>();
+        wiringBox.getItems().addAll(SolarProject.PanelWiring.PARALLEL, SolarProject.PanelWiring.SERIES);
+        wiringBox.setValue(project.getPanelWiring());
+        wiringBox.getStyleClass().add("panel-combo");
+        wiringBox.setMaxWidth(Double.MAX_VALUE);
+        lockComboHeight(wiringBox);
+        wiringBox.valueProperty().addListener((o, a, n) -> {
+            if (n != null) {
+                project.setPanelWiring(n);
+                recalculate();
+            }
+        });
+
+        HBox row3 = new HBox(12,
+            UiUtils.labeledField("Peak Sun Hours", spPsh, "Use a conservative local value"),
+            UiUtils.labeledField("Wiring Configuration", wiringBox,
+                "Parallel: current adds. Series: voltage adds. MPPT allows either within controller limits."));
+        row3.getChildren().forEach(n -> HBox.setHgrow(n, Priority.ALWAYS));
+
+        VBox form = new VBox(14, brandRow, row1, row2, row3);
         form.getStyleClass().add("card");
         form.setPadding(new Insets(16));
         return form;
@@ -108,12 +132,11 @@ public class Step2PanelSizing implements WizardShell.StepView {
         return sp;
     }
 
-    private CheckBox buildSafetyToggle() {
-        CheckBox cb = new CheckBox("Safety Factor (×1.25)");
-        cb.getStyleClass().add("toggle-check");
-        cb.setSelected(project.isPanelSafetyFactor());
-        cb.selectedProperty().addListener((o, a, n) -> { project.setPanelSafetyFactor(n); recalculate(); });
-        return cb;
+    private void lockComboHeight(ComboBox<?> combo) {
+        combo.setMinHeight(34);
+        combo.setPrefHeight(34);
+        combo.setMaxHeight(34);
+        combo.setVisibleRowCount(4);
     }
 
     private HBox buildResultTiles() {
@@ -141,10 +164,10 @@ public class Step2PanelSizing implements WizardShell.StepView {
         lblPanels .setText(project.getResultPanelsNeeded() + " pcs");
         lblTotalPv.setText(UiUtils.fmt0(project.getResultTotalPvW()) + " W");
         formulaLbl.setText(String.format(
-            "PV Power = (%.0f Wh / %.1fh) × 1.25 = %.0f W  |  Panels = %.0f W / %.0f W = %d pcs",
-            project.getResultDailyWh(), project.getSunPeakHours(),
+            "Array Size = %.0f Wh / %.1f peak sun hours = %.0f W  |  Panels = %.0f W / %.0f W = %d pcs  |  Wiring: %s",
+            project.getResultRecommendedEnergyWh(), project.getSunPeakHours(),
             project.getResultRequiredPvW(), project.getResultRequiredPvW(),
-            project.getPanelWattage(), project.getResultPanelsNeeded()));
+            project.getPanelWattage(), project.getResultPanelsNeeded(), project.getPanelWiring()));
         formulaLbl.getStyleClass().add("formula-text");
     }
 
@@ -157,7 +180,7 @@ public class Step2PanelSizing implements WizardShell.StepView {
     }
 
     @Override public Node   getRoot()      { return root; }
-    @Override public String getStepTitle() { return "Panel Sizing"; }
+    @Override public String getStepTitle() { return "Panel Array"; }
     @Override public void   onEnter()      { recalculate(); }
     @Override public void   onLeave()      {}
 }

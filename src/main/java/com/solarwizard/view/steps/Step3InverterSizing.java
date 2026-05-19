@@ -12,8 +12,8 @@ import javafx.scene.layout.*;
 import java.util.List;
 
 /**
- * Step 3 — Inverter Sizing (Custom input only).
- * Inputs feed into validation. Results: Total PV Power | Peak Load | With 20% Margin.
+ * Step 6 - Inverter Sizing.
+ * Uses appliance surge loads from Step 1 and battery voltage from Step 3.
  */
 public class Step3InverterSizing implements WizardShell.StepView {
 
@@ -47,7 +47,7 @@ public class Step3InverterSizing implements WizardShell.StepView {
     private void build() {
         mainContent.setPadding(new Insets(24, 28, 24, 28));
         mainContent.getStyleClass().add("step-content");
-        mainContent.getChildren().add(UiUtils.stepTitle("🔌", "Step 3: Inverter Sizing"));
+        mainContent.getChildren().add(UiUtils.stepTitle("6", "Step 6: Inverter Sizing"));
         mainContent.getChildren().add(warningBox);
         mainContent.getChildren().add(buildInputForm());
         mainContent.getChildren().add(buildSpecsCard());
@@ -90,6 +90,7 @@ public class Step3InverterSizing implements WizardShell.StepView {
         cbSysV.setValue(project.getInverterSysVoltage());
         cbSysV.getStyleClass().add("panel-combo");
         cbSysV.setMaxWidth(Double.MAX_VALUE);
+        lockComboHeight(cbSysV);
         cbSysV.valueProperty().addListener((o, a, n) -> { if (n != null) { project.setInverterSysVoltage(n); recalculate(); } });
 
         Spinner<Double> spBattMin = numSp(project.getInverterBattMinV(), 0, 600, 1);
@@ -98,7 +99,7 @@ public class Step3InverterSizing implements WizardShell.StepView {
         spBattMax.valueProperty().addListener((o, a, n) -> { project.setInverterBattMaxV(n); updateSpecs(); });
 
         HBox row2 = new HBox(12,
-            UiUtils.labeledField("System Voltage (V)", cbSysV,   "Common: 12V, 24V, 48V"),
+            UiUtils.labeledField("Input Voltage (V)",  cbSysV,   "Must match the battery bank voltage"),
             UiUtils.labeledField("Battery Min V",      spBattMin, "Min battery voltage accepted"),
             UiUtils.labeledField("Battery Max V",      spBattMax, "Max battery voltage accepted"));
         row2.getChildren().forEach(n -> HBox.setHgrow(n, Priority.ALWAYS));
@@ -144,7 +145,7 @@ public class Step3InverterSizing implements WizardShell.StepView {
         VBox card = new VBox(0, title,
             specRow("Rated Power",         specRated),
             specRow("Max PV Input",        specMaxPv),
-            specRow("System Voltage",      specSysV),
+            specRow("Input Voltage",       specSysV),
             specRow("Battery Voltage Range", specBattV),
             specRow("MPPT Count",          specMpptCnt),
             specRow("Max V per MPPT",      specMaxVMppt),
@@ -180,9 +181,9 @@ public class Step3InverterSizing implements WizardShell.StepView {
         lblPeakLoad  .getStyleClass().addAll("metric-value", "metric-orange");
         lblWithMargin.getStyleClass().addAll("metric-value", "metric-blue");
         HBox row = new HBox(12,
-            makeTile("Total PV Power",    lblTotalPv),
-            makeTile("Peak Load",         lblPeakLoad),
-            makeTile("With 20% Margin",   lblWithMargin));
+            makeTile("Adjusted Load Watts", lblTotalPv),
+            makeTile("Battery Voltage",     lblPeakLoad),
+            makeTile("Minimum Inverter",    lblWithMargin));
         row.getChildren().forEach(n -> HBox.setHgrow(n, Priority.ALWAYS));
         return row;
     }
@@ -196,16 +197,16 @@ public class Step3InverterSizing implements WizardShell.StepView {
 
     private void recalculate() {
         CalcService.calculate(project);
-        double peak       = CalcService.peakLoadWatts(project.getResultDailyWh(), project.getSunPeakHours());
-        double withMargin = CalcService.inverterWithMargin(peak);
+        double adjustedLoad = CalcService.adjustedLoadWatts(project.getAppliances());
+        double withMargin = project.getResultInverterMinW();
 
-        lblTotalPv   .setText(UiUtils.fmt0(project.getResultTotalPvW()) + " W");
-        lblPeakLoad  .setText(UiUtils.fmt0(peak)       + " W");
+        lblTotalPv   .setText(UiUtils.fmt0(adjustedLoad) + " W");
+        lblPeakLoad  .setText(UiUtils.fmt0(project.getBatteryVoltage()) + " V");
         lblWithMargin.setText(UiUtils.fmt0(withMargin) + " W");
 
         formulaLbl.setText(String.format(
-            "Peak Load = %.0f Wh / %.1fh = %.0f W  |  With 20%% margin = %.0f × 1.20 = %.0f W",
-            project.getResultDailyWh(), project.getSunPeakHours(), peak, peak, withMargin));
+            "Adjusted Load = motor watts x 3 + non-motor watts = %.0f W  |  Inverter Watts = %.0f x 1.20 = %.0f W",
+            adjustedLoad, adjustedLoad, withMargin));
         formulaLbl.getStyleClass().add("formula-text");
 
         updateSpecs();
@@ -252,6 +253,13 @@ public class Step3InverterSizing implements WizardShell.StepView {
         Spinner<Double> sp = new Spinner<>(min, max, init, step);
         sp.setEditable(true); sp.getStyleClass().add("styled-spinner");
         sp.setMaxWidth(Double.MAX_VALUE); HBox.setHgrow(sp, Priority.ALWAYS); return sp;
+    }
+
+    private void lockComboHeight(ComboBox<?> combo) {
+        combo.setMinHeight(34);
+        combo.setPrefHeight(34);
+        combo.setMaxHeight(34);
+        combo.setVisibleRowCount(4);
     }
 
     @Override public Node   getRoot()      { return root; }

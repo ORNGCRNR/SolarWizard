@@ -12,8 +12,8 @@ import javafx.scene.layout.*;
 import java.util.List;
 
 /**
- * Step 4 — Battery Sizing (custom, autonomy in hours only).
- * Layout mirrors reference image: Brand/Model → Voltage/Ah/Wh → DOD/Autonomy → Specs → Results.
+ * Step 3 - Battery Bank Sizing.
+ * Uses Step 2 total energy requirement, then outputs recommended usable energy for panel sizing.
  */
 public class Step4BatterySizing implements WizardShell.StepView {
 
@@ -53,7 +53,7 @@ public class Step4BatterySizing implements WizardShell.StepView {
     private void build() {
         mainContent.setPadding(new Insets(24, 28, 24, 28));
         mainContent.getStyleClass().add("step-content");
-        mainContent.getChildren().add(UiUtils.stepTitle("🔋", "Step 4: Battery Sizing"));
+        mainContent.getChildren().add(UiUtils.stepTitle("3", "Step 3: Battery Bank Sizing"));
         mainContent.getChildren().add(warningBox);
         mainContent.getChildren().add(buildInputForm());
         mainContent.getChildren().add(buildSpecsCard());
@@ -103,16 +103,12 @@ public class Step4BatterySizing implements WizardShell.StepView {
             UiUtils.labeledField("Capacity (Wh)",   whLbl,"Auto-calculated: Voltage × Ah"));
         row1.getChildren().forEach(n -> HBox.setHgrow(n, Priority.ALWAYS));
 
-        // DOD | Autonomy Hours
+        // DOD
         Spinner<Double> spDod = numSp(project.getBatteryDod(), 0.10, 1.00, 0.05);
         spDod.valueProperty().addListener((o, a, n) -> { project.setBatteryDod(n); recalculate(); });
 
-        Spinner<Double> spHrs = numSp(project.getAutonomyHours(), 1, 720, 1);
-        spHrs.valueProperty().addListener((o, a, n) -> { project.setAutonomyHours(n); recalculate(); });
-
         HBox row2 = new HBox(12,
-            UiUtils.labeledField("Depth of Discharge (DOD)", spDod, "0.50 for lead-acid, 0.90 for LiFePO4"),
-            UiUtils.labeledField("Autonomy Hours",           spHrs, "Hours the battery should power the load"));
+            UiUtils.labeledField("Depth of Discharge (DOD)", spDod, "0.50 for lead-acid, 0.80 for LiFePO4"));
         row2.getChildren().forEach(n -> HBox.setHgrow(n, Priority.ALWAYS));
 
         VBox form = new VBox(14, brandRow, row1, row2);
@@ -170,9 +166,9 @@ public class Step4BatterySizing implements WizardShell.StepView {
             makeTile("Required Capacity", lblReqAh),
             makeTile("Batteries Needed",  lblBatteriesNd));
         HBox row2 = new HBox(12,
-            makeTile("Bank Voltage",   lblBankVoltage),
-            makeTile("Total Capacity", lblTotalCap),
-            makeTile("Total Energy",   lblTotalEnergy));
+            makeTile("Total AH of Bank", lblTotalCap),
+            makeTile("Battery Energy",   lblBankVoltage),
+            makeTile("Recommended Use",  lblTotalEnergy));
         row1.getChildren().forEach(n -> HBox.setHgrow(n, Priority.ALWAYS));
         row2.getChildren().forEach(n -> HBox.setHgrow(n, Priority.ALWAYS));
         return new VBox(12, row1, row2);
@@ -191,24 +187,25 @@ public class Step4BatterySizing implements WizardShell.StepView {
         int    batteries  = project.getResultBatteriesNeeded();
         double reqAh      = project.getResultBatteryAh();
         double totalAh    = batteries * project.getBatteryCapacityAh();
-        double totalWh    = batteries * project.getBatteryVoltage() * project.getBatteryCapacityAh();
+        double totalWh    = project.getResultBatteryBankEnergyWh();
+        double recommendedWh = project.getResultRecommendedEnergyWh();
 
         lblSysVoltage .setText(UiUtils.fmt0(project.getBatteryVoltage()) + " V");
         lblReqAh      .setText(UiUtils.fmt0(reqAh) + " Ah");
         lblBatteriesNd.setText(batteries + " pcs");
-        lblBankVoltage.setText(UiUtils.fmt0(project.getBatteryVoltage()) + " V");
+        lblBankVoltage.setText(UiUtils.fmt0(totalWh) + " Wh");
         lblTotalCap   .setText(UiUtils.fmt0(totalAh) + " Ah");
-        lblTotalEnergy.setText(UiUtils.fmt0(totalWh) + " Wh");
+        lblTotalEnergy.setText(UiUtils.fmt0(recommendedWh) + " Wh");
 
         configBannerLbl.setText(String.format(
-            "Battery Configuration: 1S%dP (1 in series × %d in parallel) = %d batteries total",
-            batteries, batteries, batteries));
+            "Battery output to next stage: Recommended Energy Consumption = %.0f Wh (Battery Energy %.0f Wh x DOD %.0f%%)",
+            recommendedWh, totalWh, project.getBatteryDod() * 100));
         configBannerLbl.getStyleClass().add("formula-text");
 
         formulaLbl.setText(String.format(
-            "Capacity = (%.0f Wh × %.2f days) / (%.2f DOD × %.0f V) = %.0f Ah",
-            project.getResultDailyWh(), project.getAutonomyHours() / 24.0,
-            project.getBatteryDod(), project.getBatteryVoltage(), reqAh));
+            "Required AH = %.0f Wh / %.0f V = %.0f Ah  |  Batteries = %.0f Ah / %.0f Ah = %d pcs",
+            project.getResultTotalEnergyRequirementWh(), project.getBatteryVoltage(), reqAh,
+            reqAh, project.getBatteryCapacityAh(), batteries));
         formulaLbl.getStyleClass().add("formula-text");
 
         updateSpecs();
@@ -258,7 +255,7 @@ public class Step4BatterySizing implements WizardShell.StepView {
     }
 
     @Override public Node   getRoot()      { return root; }
-    @Override public String getStepTitle() { return "Battery Sizing"; }
+    @Override public String getStepTitle() { return "Battery Bank"; }
     @Override public void   onEnter()      { recalculate(); }
     @Override public void   onLeave()      {}
 }
