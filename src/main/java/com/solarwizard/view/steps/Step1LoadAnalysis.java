@@ -18,10 +18,12 @@ import javafx.scene.layout.*;
  */
 public class Step1LoadAnalysis implements WizardShell.StepView {
 
-    // Fixed column widths — MUST match header and row exactly
+    // Fixed column widths - MUST match header and row exactly
     private static final double W_NAME  = 150;
     private static final double W_WATTS = 95;
     private static final double W_HOURS = 85;
+    private static final double W_PEAK  = 80;
+    private static final double W_DF    = 60;
     private static final double W_QTY   = 70;
     private static final double W_MOTOR = 80;
     private static final double W_KWH   = 95;
@@ -32,14 +34,19 @@ public class Step1LoadAnalysis implements WizardShell.StepView {
     private final ScrollPane   root = new ScrollPane();
     private final VBox         mainContent = new VBox(16);
     private final StackPane    modeContent = new StackPane();
+    private final VBox         peakWarnBox = new VBox(6);
 
     private Button btnDirect, btnBill, btnDevice;
 
     // Result labels
-    private final Label lblDailyWh   = new Label("0 Wh");
-    private final Label lblDailyKwh  = new Label("0.00 kWh");
-    private final Label lblHourlyAvg = new Label("0 W");
-    private final Label formulaLbl   = new Label();
+    private final Label lblDailyWh       = new Label("0 Wh");
+    private final Label lblDailyKwh      = new Label("0.00 kWh");
+    private final Label lblHourlyAvg     = new Label("0 W");
+    private final Label lblConnectedLoad = new Label("0 W");
+    private final Label lblPeakLoad      = new Label("0 W");
+    private final Label lblSystemDf      = new Label("0.00");
+    private final Label lblRecInv        = new Label("0 W");
+    private final Label formulaLbl       = new Label();
 
     public Step1LoadAnalysis(SolarProject project, WizardShell shell) {
         this.project = project;
@@ -53,6 +60,7 @@ public class Step1LoadAnalysis implements WizardShell.StepView {
         mainContent.getChildren().add(UiUtils.stepTitle("1", "Step 1: List Appliances and Wattage"));
         mainContent.getChildren().add(modeContent);
         mainContent.getChildren().add(buildResultTiles());
+        mainContent.getChildren().add(buildPeakSummaryCard());
         HBox fb = UiUtils.formulaBanner(""); fb.getChildren().set(1, formulaLbl);
         mainContent.getChildren().add(fb);
         mainContent.getChildren().add(buildNavRow());
@@ -65,7 +73,7 @@ public class Step1LoadAnalysis implements WizardShell.StepView {
         recalculate();
     }
 
-    // ── Mode bar ──────────────────────────────────────────────────────────────
+    // -- Mode bar -----------------------------------------------------------------
     private HBox buildModeBar() {
         btnDirect = UiUtils.modeButton("✎  DIRECT");
         btnBill   = UiUtils.modeButton("⊟  BILL");
@@ -91,7 +99,7 @@ public class Step1LoadAnalysis implements WizardShell.StepView {
         recalculate();
     }
 
-    // ── DIRECT ────────────────────────────────────────────────────────────────
+    // -- DIRECT -------------------------------------------------------------------
     private Node buildDirectMode() {
         Spinner<Double> spM = UiUtils.doubleSpinner(0, 99999, project.getMonthlyKwh(), 10);
         spM.valueProperty().addListener((o, a, n) -> { project.setMonthlyKwh(n); recalculate(); });
@@ -103,7 +111,7 @@ public class Step1LoadAnalysis implements WizardShell.StepView {
         return row;
     }
 
-    // ── BILL ──────────────────────────────────────────────────────────────────
+    // -- BILL ---------------------------------------------------------------------
     private Node buildBillMode() {
         Spinner<Double> spB = UiUtils.doubleSpinner(0, 999999, project.getMonthlyBill(), 100);
         spB.valueProperty().addListener((o, a, n) -> { project.setMonthlyBill(n); recalculate(); });
@@ -114,17 +122,15 @@ public class Step1LoadAnalysis implements WizardShell.StepView {
         HBox row = new HBox(16,
             UiUtils.labeledField("Monthly Electric Bill (₱)", spB, "Total monthly bill"),
             UiUtils.labeledField("Rate per kWh (₱)",          spR, "e.g. 11.50"),
-            UiUtils.labeledField("Sun Peak Hours",             spP, "Philippines average: 4-5 hours"));
+            UiUtils.labeledField("Sun Peak Hours",              spP, "Philippines average: 4-5 hours"));
         return row;
     }
 
-    // ── DEVICE ────────────────────────────────────────────────────────────────
+    // -- DEVICE -------------------------------------------------------------------
     private Node buildDeviceMode() {
-        // Table
         HBox header = buildDeviceTableHeader();
         VBox deviceRows = new VBox(4);
 
-        // Populate existing appliances
         for (Appliance a : project.getAppliances()) {
             deviceRows.getChildren().add(buildDeviceRow(a, deviceRows));
         }
@@ -134,7 +140,7 @@ public class Step1LoadAnalysis implements WizardShell.StepView {
         addBtn.getStyleClass().add("add-device-btn");
         addBtn.setOnAction(e -> {
             deviceRows.getChildren().removeIf(n -> n instanceof VBox v && v.getStyleClass().contains("empty-state"));
-            Appliance a = new Appliance("", 0, 0, 1, false);
+            Appliance a = new Appliance("", 0, 0, 1, false, 0.0);
             project.getAppliances().add(a);
             deviceRows.getChildren().add(buildDeviceRow(a, deviceRows));
             recalculate();
@@ -151,7 +157,6 @@ public class Step1LoadAnalysis implements WizardShell.StepView {
         deviceTable.getStyleClass().add("device-table");
         deviceTable.setPadding(new Insets(12));
 
-        // Scrollable chip bar
         ScrollPane chipScroll = buildChipScrollBar(deviceRows);
 
         return new VBox(12, deviceTable, chipScroll);
@@ -162,34 +167,74 @@ public class Step1LoadAnalysis implements WizardShell.StepView {
         header.getStyleClass().add("device-table-header");
         header.setPadding(new Insets(6, 8, 6, 8));
         header.getChildren().addAll(
-            colHdr("Device Name",  W_NAME),
-            colHdr("Watts",        W_WATTS),
-            colHdr("Hours/Day",    W_HOURS),
-            colHdr("Qty",          W_QTY),
-            colHdr("Motor?",       W_MOTOR),
-            colHdr("Wh/day",       W_KWH),
-            colHdr("",             W_DEL)
+            colHdr("Device Name", W_NAME),
+            colHdr("Watts",       W_WATTS),
+            colHdr("Hrs/Day",     W_HOURS),
+            colHdr("Peak Hr",     W_PEAK,
+                "Hours this appliance runs during the system peak usage window. Used to derive the Demand Factor."),
+            colHdr("DF",          W_DF,
+                "Demand Factor - derived automatically from Peak Hr / Hrs/Day. Read-only."),
+            colHdr("Qty",         W_QTY),
+            colHdr("Motor?",      W_MOTOR),
+            colHdr("Wh/day",      W_KWH),
+            colHdr("",            W_DEL)
         );
         return header;
     }
 
     private Label colHdr(String text, double width) {
+        return colHdr(text, width, null);
+    }
+
+    private Label colHdr(String text, double width, String tooltipText) {
         Label l = new Label(text);
         l.getStyleClass().add("col-header");
         l.setPrefWidth(width);
         l.setMinWidth(width);
         l.setMaxWidth(width);
+        if (tooltipText != null && !tooltipText.isBlank()) {
+            l.setTooltip(new Tooltip(tooltipText));
+        }
         return l;
     }
 
     private HBox buildDeviceRow(Appliance appliance, VBox deviceRows) {
-        // Device name combo
         ComboBox<String> nameBox = new ComboBox<>();
         nameBox.setEditable(true);
         nameBox.getStyleClass().add("device-combo");
         for (Appliance.Preset p : Appliance.PRESETS) nameBox.getItems().add(p.name());
         nameBox.setValue(appliance.getName());
         nameBox.setPrefWidth(W_NAME); nameBox.setMinWidth(W_NAME); nameBox.setMaxWidth(W_NAME);
+
+        Spinner<Double> spW = fixedSpinner(appliance.getWatts(), 0, 99999, 10, W_WATTS);
+        spW.valueProperty().addListener((o, a, n) -> { appliance.setWatts(n); recalculate(); });
+
+        Spinner<Double> spH = fixedSpinner(appliance.getHoursPerDay(), 0, 24, 0.5, W_HOURS);
+        spH.valueProperty().addListener((o, a, n) -> { appliance.setHoursPerDay(n); recalculate(); });
+
+        Spinner<Double> spPeak = fixedSpinner(appliance.getPeakHours(), 0, 999, 0.25, W_PEAK);
+        spPeak.valueProperty().addListener((o, a, n) -> { appliance.setPeakHours(n); recalculate(); });
+
+        Label peakWarnLbl = new Label("⚠ Peak > Daily");
+        peakWarnLbl.getStyleClass().add("cell-warn-label");
+        peakWarnLbl.setStyle("-fx-text-fill: #f97316; -fx-font-size: 10px;");
+        peakWarnLbl.setManaged(false);
+        peakWarnLbl.setVisible(false);
+
+        VBox peakCell = new VBox(2, spPeak, peakWarnLbl);
+        peakCell.setPrefWidth(W_PEAK);
+        peakCell.setMinWidth(W_PEAK);
+        peakCell.setMaxWidth(W_PEAK);
+
+        Label dfLbl = new Label(UiUtils.fmt2(appliance.getDemandFactor()));
+        dfLbl.setPrefWidth(W_DF);
+        dfLbl.setMinWidth(W_DF);
+        dfLbl.setMaxWidth(W_DF);
+
+        Spinner<Integer> spQ = new Spinner<>(1, 99, appliance.getQuantity());
+        spQ.setEditable(true); spQ.getStyleClass().add("styled-spinner");
+        spQ.setPrefWidth(W_QTY); spQ.setMinWidth(W_QTY); spQ.setMaxWidth(W_QTY);
+        spQ.valueProperty().addListener((o, a, n) -> { appliance.setQuantity(n); recalculate(); });
 
         CheckBox motorCb = new CheckBox();
         motorCb.setSelected(appliance.isMotorLoad());
@@ -201,44 +246,46 @@ public class Step1LoadAnalysis implements WizardShell.StepView {
             recalculate();
         });
 
+        Label whLbl = new Label(UiUtils.fmt0(appliance.getDailyWh()) + " Wh");
+        whLbl.getStyleClass().add("kwh-label");
+        whLbl.setPrefWidth(W_KWH); whLbl.setMinWidth(W_KWH); whLbl.setMaxWidth(W_KWH);
+
+        Runnable updateWh = () -> whLbl.setText(UiUtils.fmt0(appliance.getDailyWh()) + " Wh");
+        spW.valueProperty().addListener((o, a, n) -> updateWh.run());
+        spH.valueProperty().addListener((o, a, n) -> updateWh.run());
+        spQ.valueProperty().addListener((o, a, n) -> updateWh.run());
+
+        Runnable updatePeakCell = () -> {
+            double df = appliance.getDemandFactor();
+            dfLbl.setText(UiUtils.fmt2(df));
+            dfLbl.setStyle(df > 1.0 ? "-fx-text-fill: #f97316;" : "");
+
+            boolean overrun = appliance.getHoursPerDay() > 0 && appliance.getPeakHours() > appliance.getHoursPerDay();
+            peakWarnLbl.setManaged(overrun);
+            peakWarnLbl.setVisible(overrun);
+
+            spPeak.getEditor().setStyle(appliance.getPeakHours() <= 0.0 ? "-fx-text-fill: #f59e0b;" : "");
+        };
+        appliance.hoursPerDayProperty().addListener((o, a, n) -> updatePeakCell.run());
+        appliance.peakHoursProperty().addListener((o, a, n) -> updatePeakCell.run());
+        updatePeakCell.run();
+
         nameBox.valueProperty().addListener((obs, o, name) -> {
             appliance.setName(name);
             for (Appliance.Preset p : Appliance.PRESETS) {
                 if (p.name().equals(name)) {
                     appliance.setWatts(p.watts());
                     appliance.setMotorLoad(p.isMotorLoad());
+                    appliance.setPeakHours(p.defaultPeakHours());
+                    spW.getValueFactory().setValue(p.watts());
                     motorCb.setSelected(p.isMotorLoad());
+                    spPeak.getValueFactory().setValue(p.defaultPeakHours());
                     break;
                 }
             }
             recalculate();
         });
 
-        // Watts
-        Spinner<Double> spW = fixedSpinner(appliance.getWatts(), 0, 99999, 10, W_WATTS);
-        spW.valueProperty().addListener((o, a, n) -> { appliance.setWatts(n); recalculate(); });
-
-        // Hours/day
-        Spinner<Double> spH = fixedSpinner(appliance.getHoursPerDay(), 0, 24, 0.5, W_HOURS);
-        spH.valueProperty().addListener((o, a, n) -> { appliance.setHoursPerDay(n); recalculate(); });
-
-        // Qty
-        Spinner<Integer> spQ = new Spinner<>(1, 99, appliance.getQuantity());
-        spQ.setEditable(true); spQ.getStyleClass().add("styled-spinner");
-        spQ.setPrefWidth(W_QTY); spQ.setMinWidth(W_QTY); spQ.setMaxWidth(W_QTY);
-        spQ.valueProperty().addListener((o, a, n) -> { appliance.setQuantity(n); recalculate(); });
-
-        // Daily Wh label
-        Label kwhLbl = new Label(UiUtils.fmt0(appliance.getDailyWh()) + " Wh");
-        kwhLbl.getStyleClass().add("kwh-label");
-        kwhLbl.setPrefWidth(W_KWH); kwhLbl.setMinWidth(W_KWH); kwhLbl.setMaxWidth(W_KWH);
-
-        Runnable updateKwh = () -> kwhLbl.setText(UiUtils.fmt0(appliance.getDailyWh()) + " Wh");
-        spW.valueProperty().addListener((o, a, n) -> updateKwh.run());
-        spH.valueProperty().addListener((o, a, n) -> updateKwh.run());
-        spQ.valueProperty().addListener((o, a, n) -> updateKwh.run());
-
-        // Delete
         Button del = new Button("🗑");
         del.getStyleClass().add("delete-btn");
         del.setPrefWidth(W_DEL); del.setMinWidth(W_DEL); del.setMaxWidth(W_DEL);
@@ -249,7 +296,7 @@ public class Step1LoadAnalysis implements WizardShell.StepView {
             recalculate();
         });
 
-        HBox row = new HBox(8, nameBox, spW, spH, spQ, motorCb, kwhLbl, del);
+        HBox row = new HBox(8, nameBox, spW, spH, peakCell, dfLbl, spQ, motorCb, whLbl, del);
         row.setAlignment(Pos.CENTER_LEFT);
         row.getStyleClass().add("device-row");
         row.setPadding(new Insets(4, 8, 4, 8));
@@ -281,7 +328,8 @@ public class Step1LoadAnalysis implements WizardShell.StepView {
             chip.getStyleClass().add("chip-btn");
             chip.setOnAction(e -> {
                 deviceRows.getChildren().removeIf(n -> n instanceof VBox v && v.getStyleClass().contains("empty-state"));
-                Appliance a = new Appliance(preset.name(), preset.watts(), 8, 1, preset.isMotorLoad());
+                Appliance a = new Appliance(
+                    preset.name(), preset.watts(), 8, 1, preset.isMotorLoad(), preset.defaultPeakHours());
                 project.getAppliances().add(a);
                 deviceRows.getChildren().add(buildDeviceRow(a, deviceRows));
                 recalculate();
@@ -297,7 +345,7 @@ public class Step1LoadAnalysis implements WizardShell.StepView {
         return scroll;
     }
 
-    // ── Result tiles ──────────────────────────────────────────────────────────
+    // -- Result tiles -------------------------------------------------------------
     private HBox buildResultTiles() {
         lblDailyWh  .getStyleClass().addAll("metric-value", "metric-blue");
         lblDailyKwh .getStyleClass().addAll("metric-value", "metric-blue");
@@ -308,6 +356,31 @@ public class Step1LoadAnalysis implements WizardShell.StepView {
             makeTile("Hourly Average",    lblHourlyAvg));
         row.getChildren().forEach(n -> HBox.setHgrow(n, Priority.ALWAYS));
         return row;
+    }
+
+    private VBox buildPeakSummaryCard() {
+        Label title = new Label("Peak Hour Load Estimate");
+        title.getStyleClass().add("table-title");
+
+        lblConnectedLoad.getStyleClass().addAll("metric-value", "metric-blue");
+        lblPeakLoad.getStyleClass().addAll("metric-value", "metric-orange");
+        lblSystemDf.getStyleClass().addAll("metric-value", "metric-blue");
+        lblRecInv.getStyleClass().addAll("metric-value", "metric-green");
+
+        HBox tiles = new HBox(12,
+            makeTile("Connected Load (All On)",   lblConnectedLoad),
+            makeTile("Peak Simultaneous Load",    lblPeakLoad),
+            makeTile("Demand Factor (System)",    lblSystemDf),
+            makeTile("Recommended Inverter (Peak)", lblRecInv));
+        tiles.getChildren().forEach(n -> HBox.setHgrow(n, Priority.ALWAYS));
+
+        HBox formula = UiUtils.formulaBanner(
+            "Peak Load = Σ (adjustedWatts × min(peakHrs ÷ hrsPerDay, 1.0))  |  Inverter = Peak Load × 1.20");
+
+        VBox card = new VBox(10, title, peakWarnBox, tiles, formula);
+        card.getStyleClass().add("card");
+        card.setPadding(new Insets(16));
+        return card;
     }
 
     private VBox makeTile(String label, Label value) {
@@ -323,6 +396,22 @@ public class Step1LoadAnalysis implements WizardShell.StepView {
         lblDailyWh  .setText(UiUtils.fmt0(dailyWh) + " Wh");
         lblDailyKwh .setText(UiUtils.fmt2(dailyWh / 1000) + " kWh");
         lblHourlyAvg.setText(UiUtils.fmt0(CalcService.hourlyAvgWatts(dailyWh)) + " W");
+
+        double connectedLoad = CalcService.adjustedLoadWatts(project.getAppliances());
+        double peakLoad = CalcService.peakSimultaneousWatts(project.getAppliances());
+        double systemDf = connectedLoad > 0 ? peakLoad / connectedLoad : 0;
+        double recInv = CalcService.inverterWithMargin(peakLoad);
+
+        lblConnectedLoad.setText(UiUtils.fmt0(connectedLoad) + " W");
+        lblPeakLoad.setText(UiUtils.fmt0(peakLoad) + " W");
+        lblSystemDf.setText(UiUtils.fmt2(systemDf));
+        lblRecInv.setText(UiUtils.fmt0(recInv) + " W");
+
+        peakWarnBox.getChildren().clear();
+        if (CalcService.hasPeakHoursOverrun(project.getAppliances())) {
+            peakWarnBox.getChildren().add(UiUtils.warningBanner(
+                "One or more appliances have Peak Hr greater than Hrs/Day. Demand Factor has been clamped to 1.0 for those rows in calculations."));
+        }
 
         double monthlyKwh = switch (project.getLoadMode()) {
             case DIRECT -> project.getMonthlyKwh();

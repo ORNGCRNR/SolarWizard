@@ -179,11 +179,11 @@ public class Step3InverterSizing implements WizardShell.StepView {
     private HBox buildResultTiles() {
         lblTotalPv   .getStyleClass().addAll("metric-value", "metric-blue");
         lblPeakLoad  .getStyleClass().addAll("metric-value", "metric-orange");
-        lblWithMargin.getStyleClass().addAll("metric-value", "metric-blue");
+        lblWithMargin.getStyleClass().addAll("metric-value", "metric-green");
         HBox row = new HBox(12,
-            makeTile("Adjusted Load Watts", lblTotalPv),
-            makeTile("Battery Voltage",     lblPeakLoad),
-            makeTile("Minimum Inverter",    lblWithMargin));
+            makeTile("Connected Load (All On)", lblTotalPv),
+            makeTile("Peak Simultaneous Load",  lblPeakLoad),
+            makeTile("Minimum Inverter (Peak)", lblWithMargin));
         row.getChildren().forEach(n -> HBox.setHgrow(n, Priority.ALWAYS));
         return row;
     }
@@ -198,24 +198,22 @@ public class Step3InverterSizing implements WizardShell.StepView {
     private void recalculate() {
         CalcService.calculate(project);
         double adjustedLoad = CalcService.adjustedLoadWatts(project.getAppliances());
+        double peakLoad = CalcService.peakSimultaneousWatts(project.getAppliances());
         double withMargin = project.getResultInverterMinW();
 
         lblTotalPv   .setText(UiUtils.fmt0(adjustedLoad) + " W");
-        lblPeakLoad  .setText(UiUtils.fmt0(project.getBatteryVoltage()) + " V");
+        lblPeakLoad  .setText(UiUtils.fmt0(peakLoad) + " W");
         lblWithMargin.setText(UiUtils.fmt0(withMargin) + " W");
 
         formulaLbl.setText(String.format(
-            "Adjusted Load = motor watts x 3 + non-motor watts = %.0f W  |  Inverter Watts = %.0f x 1.20 = %.0f W",
-            adjustedLoad, adjustedLoad, withMargin));
+            "Connected Load (all appliances on) = %.0f W\nPeak Load (demand factor applied) = %.0f W\nMinimum Inverter = %.0f × 1.20 = %.0f W",
+            adjustedLoad, peakLoad, peakLoad, withMargin));
         formulaLbl.getStyleClass().add("formula-text");
 
         updateSpecs();
         warningBox.getChildren().clear();
         for (ValidationService.Warning w : ValidationService.validateInverter(project)) {
-            warningBox.getChildren().add(
-                w.severity() == ValidationService.Warning.Severity.ERROR
-                    ? UiUtils.errorBanner(w.message(), () -> warningBox.getChildren().clear())
-                    : UiUtils.warningBanner(w.message()));
+            warningBox.getChildren().add(UiUtils.warningBanner(precautionMessage(w)));
         }
     }
 
@@ -234,14 +232,21 @@ public class Step3InverterSizing implements WizardShell.StepView {
 
     private void showPrecautionDialog(List<ValidationService.Warning> warns, Runnable proceed) {
         Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setTitle("Precautions"); alert.setHeaderText("⚠  Warnings — not advisable:");
+        alert.setTitle("Safety Precautions");
+        alert.setHeaderText("Solar inverter safety checks (not system errors)");
         StringBuilder sb = new StringBuilder();
-        warns.forEach(w -> sb.append("• ").append(w.message()).append("\n\n"));
+        warns.forEach(w -> sb.append("- ").append(precautionMessage(w)).append("\n\n"));
         alert.setContentText(sb.toString().trim());
         alert.getButtonTypes().setAll(
             new ButtonType("GO BACK & FIX", ButtonBar.ButtonData.CANCEL_CLOSE),
             new ButtonType("PROCEED ANYWAY", ButtonBar.ButtonData.OK_DONE));
         alert.showAndWait().ifPresent(bt -> { if (bt.getButtonData() == ButtonBar.ButtonData.OK_DONE) proceed.run(); });
+    }
+
+    private String precautionMessage(ValidationService.Warning warning) {
+        return warning.severity() == ValidationService.Warning.Severity.ERROR
+            ? "SAFETY PRECAUTION (Proceed at your own risk): " + warning.message()
+            : warning.message();
     }
 
     private TextField styledField(String init, String prompt) {

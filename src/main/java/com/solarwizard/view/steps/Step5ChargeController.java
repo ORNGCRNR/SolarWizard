@@ -150,10 +150,7 @@ public class Step5ChargeController implements WizardShell.StepView {
 
         warningBox.getChildren().clear();
         for (ValidationService.Warning w : ValidationService.validateChargeController(project)) {
-            warningBox.getChildren().add(
-                w.severity() == ValidationService.Warning.Severity.ERROR
-                    ? UiUtils.errorBanner(w.message(), () -> warningBox.getChildren().clear())
-                    : UiUtils.warningBanner(w.message()));
+            warningBox.getChildren().add(UiUtils.warningBanner(precautionMessage(w)));
         }
     }
 
@@ -180,10 +177,10 @@ public class Step5ChargeController implements WizardShell.StepView {
 
     private void showPrecautionDialog(List<ValidationService.Warning> warns, Runnable proceed) {
         Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setTitle("Precautions");
-        alert.setHeaderText("Solar charge controller warnings");
+        alert.setTitle("Safety Precautions");
+        alert.setHeaderText("Solar charge controller safety checks (not system errors)");
         StringBuilder sb = new StringBuilder();
-        warns.forEach(w -> sb.append("- ").append(w.message()).append("\n\n"));
+        warns.forEach(w -> sb.append("- ").append(precautionMessage(w)).append("\n\n"));
         alert.setContentText(sb.toString().trim());
         alert.getButtonTypes().setAll(
             new ButtonType("GO BACK & FIX", ButtonBar.ButtonData.CANCEL_CLOSE),
@@ -191,6 +188,12 @@ public class Step5ChargeController implements WizardShell.StepView {
         alert.showAndWait().ifPresent(bt -> {
             if (bt.getButtonData() == ButtonBar.ButtonData.OK_DONE) proceed.run();
         });
+    }
+
+    private String precautionMessage(ValidationService.Warning warning) {
+        return warning.severity() == ValidationService.Warning.Severity.ERROR
+            ? "SAFETY PRECAUTION (Proceed at your own risk): " + warning.message()
+            : warning.message();
     }
 
     private TextField styledField(String init, String prompt) {

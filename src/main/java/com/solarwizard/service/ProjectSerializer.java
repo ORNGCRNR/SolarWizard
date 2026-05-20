@@ -55,6 +55,7 @@ public class ProjectSerializer {
             w(lines, "appliance." + i + ".hoursPerDay", a.getHoursPerDay());
             w(lines, "appliance." + i + ".quantity",    a.getQuantity());
             w(lines, "appliance." + i + ".motorLoad",   a.isMotorLoad());
+            w(lines, "appliance." + i + ".peakHours",   a.getPeakHours());
         }
 
         // Step 2
@@ -197,7 +198,8 @@ public class ProjectSerializer {
             double hours    = d(raw.getOrDefault("appliance." + idx + ".hoursPerDay","1"));
             int    qty      = i(raw.getOrDefault("appliance." + idx + ".quantity",  "1"));
             boolean motor   = b(raw.getOrDefault("appliance." + idx + ".motorLoad", "false"));
-            p.getAppliances().add(new Appliance(name, watts, hours, qty, motor));
+            double peakHours = d(raw.getOrDefault("appliance." + idx + ".peakHours", "0.0"));
+            p.getAppliances().add(new Appliance(name, watts, hours, qty, motor, peakHours));
         }
 
         return p;

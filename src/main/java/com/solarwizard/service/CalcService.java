@@ -136,6 +136,25 @@ public class CalcService {
         return appliances.stream().mapToDouble(Appliance::getAdjustedWatts).sum();
     }
 
+    /**
+     * Peak simultaneous load = sum of peakWatts across all appliances.
+     * peakWatts = adjustedWatts x min(peakHours/hoursPerDay, 1.0)
+     * This is what the inverter must handle during the worst-case peak hour.
+     */
+    public static double peakSimultaneousWatts(List<Appliance> appliances) {
+        return appliances.stream().mapToDouble(Appliance::getPeakWatts).sum();
+    }
+
+    /**
+     * Returns true if any appliance has peakHours > hoursPerDay.
+     * Used to trigger a validation warning in the UI.
+     */
+    public static boolean hasPeakHoursOverrun(List<Appliance> appliances) {
+        return appliances.stream()
+            .anyMatch(a -> a.getHoursPerDay() > 0
+                        && a.getPeakHours() > a.getHoursPerDay());
+    }
+
     public static double inverterWithMargin(double adjustedLoadWatts) {
         return adjustedLoadWatts * 1.20;
     }
@@ -221,6 +240,6 @@ public class CalcService {
         p.setResultRequiredSccCurrent(requiredChargeControllerCurrent(p));
 
         // Step 6
-        p.setResultInverterMinW(inverterWithMargin(adjustedLoadWatts(p.getAppliances())));
+        p.setResultInverterMinW(inverterWithMargin(peakSimultaneousWatts(p.getAppliances())));
     }
 }

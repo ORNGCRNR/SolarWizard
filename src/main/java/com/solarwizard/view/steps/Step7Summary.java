@@ -50,10 +50,7 @@ public class Step7Summary implements WizardShell.StepView {
             mainContent.getChildren().add(UiUtils.successBanner("All checks passed for the current inputs."));
         } else {
             for (ValidationService.Warning w : allWarnings) {
-                mainContent.getChildren().add(
-                    w.severity() == ValidationService.Warning.Severity.ERROR
-                        ? UiUtils.errorBanner(w.message(), () -> {})
-                        : UiUtils.warningBanner(w.message()));
+                mainContent.getChildren().add(UiUtils.warningBanner(precautionMessage(w)));
             }
         }
 
@@ -164,6 +161,12 @@ public class Step7Summary implements WizardShell.StepView {
         row.getStyleClass().add("report-row");
         row.setPadding(new Insets(8, 4, 8, 4));
         return row;
+    }
+
+    private String precautionMessage(ValidationService.Warning warning) {
+        return warning.severity() == ValidationService.Warning.Severity.ERROR
+            ? "SAFETY PRECAUTION (Proceed at your own risk): " + warning.message()
+            : warning.message();
     }
 
     private record AwgResult(int awg, String mm2) {}
