@@ -3,13 +3,16 @@ package com.solarwizard.view.steps;
 import com.solarwizard.model.SolarProject;
 import com.solarwizard.service.CalcService;
 import com.solarwizard.service.CalcService.AwgEntry;
+import com.solarwizard.service.CalcService.PecEntry;
 import com.solarwizard.service.ValidationService;
 import com.solarwizard.util.UiUtils;
 import com.solarwizard.view.WizardShell;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.scene.text.TextAlignment;
 
 /**
  * Step 7 - Wire sizing using the VDI method from the decision flow.
@@ -22,11 +25,37 @@ public class Step5WireSizing implements WizardShell.StepView {
     private final VBox mainContent = new VBox(16);
     private final VBox warningBox = new VBox(6);
 
-    private final Label[][] tableCells = new Label[4][6];
-    private final Label formulaLbl = new Label();
+    private final Label[][] tableCells = new Label[4][8];
+    private final Label pecFormulaLbl = new Label();
 
     private static final String[] ROW_NAMES = {
         "Panels to SCC", "SCC to Battery", "Battery to Inverter", "Inverter to AC Load"
+    };
+
+    private static final String[] PEC_STANDARD_HEADERS = {
+        "AWG",
+        "Metric Size (mm²)",
+        "Max Ampacity (75°C Copper)",
+        "Overcurrent Protection Max (Breaker Size)"
+    };
+
+    private static final String[][] PEC_STANDARD_ROWS = {
+        { "14 AWG", "2.0 mm²", "15 A", "15 A" },
+        { "12 AWG", "3.5 mm²", "20 A", "20 A" },
+        { "10 AWG", "5.5 mm²", "30 A", "30 A" },
+        { "8 AWG", "8.0 mm²", "50 A", "40 A" },
+        { "6 AWG", "14 mm²", "65 A", "55 A" },
+        { "4 AWG", "22 mm²", "85 A", "80 A" },
+        { "2 AWG", "30 mm²", "115 A", "100 A" },
+        { "1 AWG", "38 mm²", "130 A", "125 A" },
+        { "1/0 AWG", "50 mm²", "150 A", "150 A" },
+        { "2/0 AWG", "60 mm²", "175 A", "175 A" },
+        { "3/0 AWG", "80 mm²", "200 A", "200 A" },
+        { "4/0 AWG", "100 mm²", "230 A", "225 A" },
+        { "250 kcmil", "125 mm²", "255 A", "250 A" },
+        { "300 kcmil", "150 mm²", "285 A", "300 A" },
+        { "400 kcmil", "200 mm²", "335 A", "350 A" },
+        { "500 kcmil", "250 mm²", "380 A", "400 A" }
     };
 
     public Step5WireSizing(SolarProject project, WizardShell shell) {
@@ -42,9 +71,14 @@ public class Step5WireSizing implements WizardShell.StepView {
         mainContent.getChildren().add(warningBox);
         mainContent.getChildren().add(buildInputGrid());
         mainContent.getChildren().add(buildTable());
-        HBox fb = UiUtils.formulaBanner("");
-        fb.getChildren().set(1, formulaLbl);
-        mainContent.getChildren().add(fb);
+        mainContent.getChildren().add(buildPecStandardsTable());
+
+        HBox pecFb = UiUtils.formulaBanner("");
+        pecFormulaLbl.setText("PEC Table 2.50.6.13 — Copper conductor minimum size based on overcurrent device rating.");
+        pecFormulaLbl.getStyleClass().add("formula-text");
+        pecFb.getChildren().set(1, pecFormulaLbl);
+        mainContent.getChildren().add(pecFb);
+
         mainContent.getChildren().add(buildNavRow());
 
         root.setContent(mainContent);
@@ -101,8 +135,12 @@ public class Step5WireSizing implements WizardShell.StepView {
     }
 
     private VBox buildTable() {
-        double[] colWidths = { 160, 95, 95, 100, 80, 90, 100 };
-        String[] headers = { "Phase", "Current (A)", "Voltage (V)", "Distance (m)", "VDI", "Wire (AWG)", "Wire (mm2)" };
+        double[] colWidths = { 150, 88, 88, 92, 84, 112, 150, 72, 72 };
+        String[] headers = {
+            "Phase", "Current (A)", "Voltage (V)", "Distance (m)",
+            "Wire (AWG)", "PEC Breaker (A)", "Wire Size mm²(mm dia.)",
+            "VDrop (V)", "VDrop (%)"
+        };
 
         HBox headerRow = new HBox();
         headerRow.getStyleClass().add("device-table-header");
@@ -113,6 +151,8 @@ public class Step5WireSizing implements WizardShell.StepView {
             h.setPrefWidth(colWidths[i]);
             h.setMinWidth(colWidths[i]);
             h.setWrapText(true);
+            h.setAlignment(Pos.CENTER);
+            h.setTextAlignment(TextAlignment.CENTER);
             headerRow.getChildren().add(h);
         }
 
@@ -128,19 +168,65 @@ public class Step5WireSizing implements WizardShell.StepView {
             nameCell.getStyleClass().add("table-cell");
             nameCell.setPrefWidth(colWidths[0]);
             nameCell.setMinWidth(colWidths[0]);
+            nameCell.setAlignment(Pos.CENTER);
+            nameCell.setTextAlignment(TextAlignment.CENTER);
             dataRow.getChildren().add(nameCell);
 
-            for (int c = 0; c < 6; c++) {
+            for (int c = 0; c < 8; c++) {
                 tableCells[r][c] = new Label("-");
                 tableCells[r][c].getStyleClass().add("table-cell");
-                if (c == 4) tableCells[r][c].getStyleClass().add("awg-value");
+                if (c == 3) tableCells[r][c].getStyleClass().add("awg-value");
                 tableCells[r][c].setPrefWidth(colWidths[c + 1]);
                 tableCells[r][c].setMinWidth(colWidths[c + 1]);
+                tableCells[r][c].setWrapText(true);
+                tableCells[r][c].setAlignment(Pos.CENTER);
+                tableCells[r][c].setTextAlignment(TextAlignment.CENTER);
                 dataRow.getChildren().add(tableCells[r][c]);
             }
             tableBox.getChildren().add(dataRow);
         }
         return tableBox;
+    }
+
+    private VBox buildPecStandardsTable() {
+        Label title = new Label("PEC Standards with Ampere Rating Code");
+        title.getStyleClass().add("table-title");
+
+        double[] colWidths = { 140, 150, 190, 260 };
+
+        HBox headerRow = new HBox();
+        headerRow.getStyleClass().add("device-table-header");
+        headerRow.setPadding(new Insets(10, 12, 10, 12));
+        for (int i = 0; i < PEC_STANDARD_HEADERS.length; i++) {
+            headerRow.getChildren().add(tableLabel(PEC_STANDARD_HEADERS[i], colWidths[i], "col-header"));
+        }
+
+        VBox tableBox = new VBox(0, headerRow);
+        tableBox.getStyleClass().add("wire-table");
+
+        for (int r = 0; r < PEC_STANDARD_ROWS.length; r++) {
+            HBox dataRow = new HBox();
+            dataRow.getStyleClass().add(r % 2 == 0 ? "table-row-even" : "table-row-odd");
+            dataRow.setPadding(new Insets(10, 12, 10, 12));
+
+            for (int c = 0; c < PEC_STANDARD_ROWS[r].length; c++) {
+                dataRow.getChildren().add(tableLabel(PEC_STANDARD_ROWS[r][c], colWidths[c], "table-cell"));
+            }
+            tableBox.getChildren().add(dataRow);
+        }
+
+        return new VBox(8, title, tableBox);
+    }
+
+    private Label tableLabel(String text, double width, String styleClass) {
+        Label label = new Label(text);
+        label.getStyleClass().add(styleClass);
+        label.setPrefWidth(width);
+        label.setMinWidth(width);
+        label.setWrapText(true);
+        label.setAlignment(Pos.CENTER);
+        label.setTextAlignment(TextAlignment.CENTER);
+        return label;
     }
 
     private void recalculate() {
@@ -157,9 +243,6 @@ public class Step5WireSizing implements WizardShell.StepView {
             batteryVoltage, project.getWireBatteryToInverterM(), project.getWireVoltageDrop());
         fillRow(3, inverterWatts / 220.0, 220.0,
             project.getWireInverterToLoadM(), 1.0);
-
-        formulaLbl.setText("VDI = (Current x Distance_ft) / (Voltage x %VoltageDrop). Use the next higher VDI from the AWG chart.");
-        formulaLbl.getStyleClass().add("formula-text");
 
         warningBox.getChildren().clear();
         for (ValidationService.Warning w : ValidationService.validateWiring(project)) {
@@ -180,12 +263,22 @@ public class Step5WireSizing implements WizardShell.StepView {
         double distFt = CalcService.metresToFeet(distM);
         double vdi = CalcService.vdi(current, distFt, voltage, voltageDropPct);
         AwgEntry entry = CalcService.lookupAwg(vdi);
+        int breakerA = CalcService.standardBreakerSize(current);
+        PecEntry pecEntry = CalcService.lookupPecCopper(breakerA);
+
         tableCells[row][0].setText(UiUtils.fmt1(current));
         tableCells[row][1].setText(UiUtils.fmt1(voltage));
         tableCells[row][2].setText(UiUtils.fmt0(distM));
-        tableCells[row][3].setText(UiUtils.fmt1(vdi));
-        tableCells[row][4].setText(String.valueOf(entry.awg()));
-        tableCells[row][5].setText(UiUtils.fmt2(entry.areaMm2()));
+        tableCells[row][3].setText(String.valueOf(entry.awg()));
+        tableCells[row][4].setText(UiUtils.fmt0(breakerA) + " A");
+        tableCells[row][5].setText(pecEntry != null
+            ? UiUtils.fmt1(pecEntry.mmDia()) + " mm²"
+            : "—");
+
+        double vdropV   = CalcService.voltageDropVolts(current, distM, entry.areaMm2());
+        double vdropPct = CalcService.voltageDropPercent(vdropV, voltage);
+        tableCells[row][6].setText(UiUtils.fmt2(vdropV) + " V");
+        tableCells[row][7].setText(UiUtils.fmt2(vdropPct) + "%");
     }
 
     private Spinner<Double> numSp(double init, double min, double max, double step) {

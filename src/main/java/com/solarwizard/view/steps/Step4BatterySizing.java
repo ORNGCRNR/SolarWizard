@@ -9,6 +9,7 @@ import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.util.StringConverter;
 import java.util.List;
 
 /**
@@ -33,16 +34,10 @@ public class Step4BatterySizing implements WizardShell.StepView {
     // Result tiles
     private final Label lblSysVoltage   = new Label("0 V");
     private final Label lblReqAh        = new Label("0 Ah");
-    private final Label lblBatteriesNd  = new Label("0 pcs");
-    private final Label lblBankVoltage  = new Label("0 V");
     private final Label lblTotalCap     = new Label("0 Ah");
-    private final Label lblTotalEnergy  = new Label("0 Wh");
 
     private final Label configBannerLbl = new Label();
     private final Label formulaLbl      = new Label();
-
-    // Live Wh label
-    private Label whLbl;
 
     public Step4BatterySizing(SolarProject project, WizardShell shell) {
         this.project = project;
@@ -86,21 +81,43 @@ public class Step4BatterySizing implements WizardShell.StepView {
         HBox.setHgrow(tfBrand, Priority.ALWAYS);
         HBox.setHgrow(tfModel, Priority.ALWAYS);
 
-        // Voltage | Capacity (Ah) | Capacity (Wh) — auto
-        Spinner<Double> spV  = numSp(project.getBatteryVoltage(),    6, 600, 0.1);
+        // Voltage dropdown
+        ComboBox<Double> voltageBox = new ComboBox<>();
+        voltageBox.getItems().addAll(12.0, 24.0, 48.0, 51.2);
+        voltageBox.setValue(project.getBatteryVoltage());
+        voltageBox.getStyleClass().add("panel-combo");
+        voltageBox.setMaxWidth(Double.MAX_VALUE);
+        voltageBox.setMinHeight(34);
+        voltageBox.setPrefHeight(34);
+        voltageBox.setMaxHeight(34);
+        voltageBox.setVisibleRowCount(4);
+        voltageBox.setConverter(new StringConverter<Double>() {
+            @Override public String toString(Double v) {
+                if (v == null) return "";
+                return v == 51.2 ? "51.2V (LiFePO4)" : UiUtils.fmt0(v) + "V";
+            }
+            @Override public Double fromString(String s) { return null; }
+        });
+        voltageBox.valueProperty().addListener((o, a, n) -> {
+            if (n != null) { project.setBatteryVoltage(n); recalculate(); }
+        });
+
+        // Capacity (Ah)
         Spinner<Double> spAh = numSp(project.getBatteryCapacityAh(), 1, 99999, 10);
+        spAh.valueProperty().addListener((o, a, n) -> { project.setBatteryCapacityAh(n); recalculate(); });
 
-        whLbl = new Label(UiUtils.fmt0(project.getBatteryVoltage() * project.getBatteryCapacityAh()) + " Wh");
-        whLbl.getStyleClass().add("readonly-value");
-
-        Runnable updateWh = () -> whLbl.setText(UiUtils.fmt0(spV.getValue() * spAh.getValue()) + " Wh");
-        spV .valueProperty().addListener((o, a, n) -> { project.setBatteryVoltage(n);    updateWh.run(); recalculate(); });
-        spAh.valueProperty().addListener((o, a, n) -> { project.setBatteryCapacityAh(n); updateWh.run(); recalculate(); });
+        // Battery Quantity
+        Spinner<Integer> spQty = new Spinner<>(1, 9999, project.getBatteryQuantity());
+        spQty.setEditable(true);
+        spQty.getStyleClass().add("styled-spinner");
+        spQty.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(spQty, Priority.ALWAYS);
+        spQty.valueProperty().addListener((o, a, n) -> { project.setBatteryQuantity(n); recalculate(); });
 
         HBox row1 = new HBox(12,
-            UiUtils.labeledField("Voltage (V)",     spV,  "Common: 12V, 24V, 48V, 51.2V (LiFePO4)"),
-            UiUtils.labeledField("Capacity (Ah)",   spAh, null),
-            UiUtils.labeledField("Capacity (Wh)",   whLbl,"Auto-calculated: Voltage × Ah"));
+            UiUtils.labeledField("Nominal Voltage (V)",       voltageBox, "Common: 12V, 24V, 48V, 51.2V (LiFePO4)"),
+            UiUtils.labeledField("Capacity (Ah)",     spAh,       null),
+            UiUtils.labeledField("Battery Quantity",  spQty,      "Number of batteries in the bank"));
         row1.getChildren().forEach(n -> HBox.setHgrow(n, Priority.ALWAYS));
 
         // DOD
@@ -125,7 +142,7 @@ public class Step4BatterySizing implements WizardShell.StepView {
         VBox card = new VBox(0, title,
             specRow("Brand",    specBrand),
             specRow("Model",    specModel),
-            specRow("Voltage",  specVoltage),
+            specRow("Nominal Voltage",  specVoltage),
             specRow("Capacity", specCapacity),
             specRow("DOD",      specDod));
         card.getStyleClass().add("specs-card");
@@ -156,22 +173,14 @@ public class Step4BatterySizing implements WizardShell.StepView {
     private VBox buildResultTiles() {
         lblSysVoltage .getStyleClass().addAll("metric-value", "metric-blue");
         lblReqAh      .getStyleClass().addAll("metric-value", "metric-orange");
-        lblBatteriesNd.getStyleClass().addAll("metric-value", "metric-blue");
-        lblBankVoltage.getStyleClass().addAll("metric-value", "metric-blue");
         lblTotalCap   .getStyleClass().addAll("metric-value", "metric-blue");
-        lblTotalEnergy.getStyleClass().addAll("metric-value", "metric-green");
 
         HBox row1 = new HBox(12,
             makeTile("System Voltage",    lblSysVoltage),
             makeTile("Required Capacity", lblReqAh),
-            makeTile("Batteries Needed",  lblBatteriesNd));
-        HBox row2 = new HBox(12,
-            makeTile("Total AH of Bank", lblTotalCap),
-            makeTile("Battery Energy",   lblBankVoltage),
-            makeTile("Recommended Use",  lblTotalEnergy));
+            makeTile("Total AH of Bank",  lblTotalCap));
         row1.getChildren().forEach(n -> HBox.setHgrow(n, Priority.ALWAYS));
-        row2.getChildren().forEach(n -> HBox.setHgrow(n, Priority.ALWAYS));
-        return new VBox(12, row1, row2);
+        return new VBox(12, row1);
     }
 
     private VBox makeTile(String label, Label value) {
@@ -184,18 +193,20 @@ public class Step4BatterySizing implements WizardShell.StepView {
     // ── Calculation ───────────────────────────────────────────────────────────
     private void recalculate() {
         CalcService.calculate(project);
-        int    batteries  = project.getResultBatteriesNeeded();
-        double reqAh      = project.getResultBatteryAh();
-        double totalAh    = batteries * project.getBatteryCapacityAh();
-        double totalWh    = project.getResultBatteryBankEnergyWh();
+        int    batteries     = project.getResultBatteriesNeeded();
+        double reqAh         = project.getResultBatteryAh();
+        double totalAh       = batteries * project.getBatteryCapacityAh();
+        double totalWh       = project.getResultBatteryBankEnergyWh();
         double recommendedWh = project.getResultRecommendedEnergyWh();
 
         lblSysVoltage .setText(UiUtils.fmt0(project.getBatteryVoltage()) + " V");
         lblReqAh      .setText(UiUtils.fmt0(reqAh) + " Ah");
-        lblBatteriesNd.setText(batteries + " pcs");
-        lblBankVoltage.setText(UiUtils.fmt0(totalWh) + " Wh");
         lblTotalCap   .setText(UiUtils.fmt0(totalAh) + " Ah");
-        lblTotalEnergy.setText(UiUtils.fmt0(recommendedWh) + " Wh");
+
+        configBannerLbl.setText(String.format(
+            "Battery output to next stage: Recommended Energy Consumption = %.0f Wh (Battery Energy %.0f Wh x DOD %.0f%%)",
+            recommendedWh, totalWh, project.getBatteryDod() * 100));
+        configBannerLbl.getStyleClass().add("formula-text");
 
         configBannerLbl.setText(String.format(
             "Battery output to next stage: Recommended Energy Consumption = %.0f Wh (Battery Energy %.0f Wh x DOD %.0f%%)",
@@ -203,9 +214,9 @@ public class Step4BatterySizing implements WizardShell.StepView {
         configBannerLbl.getStyleClass().add("formula-text");
 
         formulaLbl.setText(String.format(
-            "Required AH = %.0f Wh / %.0f V = %.0f Ah  |  Batteries = %.0f Ah / %.0f Ah = %d pcs",
+            "Required AH = %.0f Wh / %.0f V = %.0f Ah  |  Total Bank = %d x %.0f Ah = %.0f Ah",
             project.getResultTotalEnergyRequirementWh(), project.getBatteryVoltage(), reqAh,
-            reqAh, project.getBatteryCapacityAh(), batteries));
+            batteries, project.getBatteryCapacityAh(), totalAh));
         formulaLbl.getStyleClass().add("formula-text");
 
         updateSpecs();

@@ -1,0 +1,152 @@
+{
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\.github\\java-upgrade\\hooks\\scripts\\recordToolUse.ps1": {
+    "mtime": 1779531956.9027028,
+    "ast_hash": "a76b05925b01d5e7a642eda1824e8fa7",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\.github\\java-upgrade\\hooks\\scripts\\recordToolUse.sh": {
+    "mtime": 1779531956.9027028,
+    "ast_hash": "392b480c0ee4898af9652e8fc429f7cd",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\.github\\modernize\\java-upgrade\\hooks\\scripts\\recordToolUse.ps1": {
+    "mtime": 1780455977.3490264,
+    "ast_hash": "9ecf230451dfd20ff4e0a2a01e80a4e6",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\.github\\modernize\\java-upgrade\\hooks\\scripts\\recordToolUse.sh": {
+    "mtime": 1780455977.3500285,
+    "ast_hash": "e25ae501603ce6bf738198f5ce32ba83",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\build_basic_graph.py": {
+    "mtime": 1780456441.7753568,
+    "ast_hash": "9371732248667c9a9c63d85497b446c0",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\graphify_detect_basic.py": {
+    "mtime": 1780456361.7200112,
+    "ast_hash": "ac98226d34827a4baca1b47142c56c16",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\src\\main\\java\\com\\solarwizard\\app\\Launcher.java": {
+    "mtime": 1777776213.0,
+    "ast_hash": "027d83266295ca1c7881bd33894a75cf",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\src\\main\\java\\com\\solarwizard\\app\\MainApp.java": {
+    "mtime": 1777808485.0,
+    "ast_hash": "e30e212d917228a735a332a9bf812d7a",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\src\\main\\java\\com\\solarwizard\\model\\Appliance.java": {
+    "mtime": 1779242053.6046996,
+    "ast_hash": "cf2c038c64bc723f1647ad68562dd260",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\src\\main\\java\\com\\solarwizard\\model\\SolarPanel.java": {
+    "mtime": 1777776086.0,
+    "ast_hash": "590100222236ccf354e7bc7ae46c7f76",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\src\\main\\java\\com\\solarwizard\\model\\SolarProject.java": {
+    "mtime": 1778982001.901392,
+    "ast_hash": "f85b5720071365fe3c10b09e2337e634",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\src\\main\\java\\com\\solarwizard\\service\\AppSettings.java": {
+    "mtime": 1778030676.0,
+    "ast_hash": "b1fa9fd82ab01ca790d9e0075118eb62",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\src\\main\\java\\com\\solarwizard\\service\\CalcService.java": {
+    "mtime": 1779242087.8481982,
+    "ast_hash": "08e41a9996f0ce3391e4e2827f85cd57",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\src\\main\\java\\com\\solarwizard\\service\\ProjectSerializer.java": {
+    "mtime": 1779242098.5983453,
+    "ast_hash": "da354c18297a1ee641893c3299c31cac",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\src\\main\\java\\com\\solarwizard\\service\\ProjectStore.java": {
+    "mtime": 1778030703.0,
+    "ast_hash": "f12f9ba94e3346f4b5ae4f2dc480579f",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\src\\main\\java\\com\\solarwizard\\service\\ValidationService.java": {
+    "mtime": 1778981537.9913466,
+    "ast_hash": "72c92d19ae7b269b44ed73cf45195ef4",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\src\\main\\java\\com\\solarwizard\\util\\UiUtils.java": {
+    "mtime": 1777776201.0,
+    "ast_hash": "cf0306b728c283a47177e4211ba6c2aa",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\src\\main\\java\\com\\solarwizard\\view\\DashboardView.java": {
+    "mtime": 1778030753.0,
+    "ast_hash": "1123eb12e9b3adada2178c8019c79abb",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\src\\main\\java\\com\\solarwizard\\view\\WizardShell.java": {
+    "mtime": 1778981850.861509,
+    "ast_hash": "1015d9b9e5b70dc17198e91a53167143",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\src\\main\\java\\com\\solarwizard\\view\\steps\\Step1LoadAnalysis.java": {
+    "mtime": 1779242356.8402228,
+    "ast_hash": "ed43ee067097e53e5e1b8c57ed287bad",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\src\\main\\java\\com\\solarwizard\\view\\steps\\Step2EnergyRequirement.java": {
+    "mtime": 1778981199.0451443,
+    "ast_hash": "259bdc92c3d76ba9a4662b419bf9aa19",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\src\\main\\java\\com\\solarwizard\\view\\steps\\Step2PanelSizing.java": {
+    "mtime": 1778983110.2266378,
+    "ast_hash": "a28d3a03669ccc315a8a215d13ebc083",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\src\\main\\java\\com\\solarwizard\\view\\steps\\Step3InverterSizing.java": {
+    "mtime": 1779242384.2217023,
+    "ast_hash": "245ca3a364d6e92fa33bd735438508bc",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\src\\main\\java\\com\\solarwizard\\view\\steps\\Step4BatterySizing.java": {
+    "mtime": 1778981321.6611269,
+    "ast_hash": "c5602ed678d4b4a6b5f169ffb471a406",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\src\\main\\java\\com\\solarwizard\\view\\steps\\Step5ChargeController.java": {
+    "mtime": 1779160051.297625,
+    "ast_hash": "91f03cf819884d0b9eb02b5dacbe8bc8",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\src\\main\\java\\com\\solarwizard\\view\\steps\\Step5WireSizing.java": {
+    "mtime": 1778981706.4883,
+    "ast_hash": "929c9d3c195bfcf30097c86905b3c9dd",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\src\\main\\java\\com\\solarwizard\\view\\steps\\Step6BreakerSizing.java": {
+    "mtime": 1778981768.3008647,
+    "ast_hash": "73f28db09efb2289d624fecfbfce00bf",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\src\\main\\java\\com\\solarwizard\\view\\steps\\Step7Summary.java": {
+    "mtime": 1779160244.884791,
+    "ast_hash": "04cd553c7dfc9e0fb19939d940867a6c",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\src\\main\\java\\module-info.java": {
+    "mtime": 1778030794.0,
+    "ast_hash": "de9280c42dccdd4b1e6917f04b5ac6f7",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ken\\Documents\\Activites\\SolarWizard\\SolarWizard\\README.md": {
+    "mtime": 1779532658.224609,
+    "ast_hash": "39d5ef6e782c353dde37be31d20ae71a",
+    "semantic_hash": ""
+  }
+}

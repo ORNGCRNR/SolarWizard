@@ -1,6 +1,6 @@
 # ☀ Solar Sizing Wizard
 
-A desktop app for solar panel system sizing.
+A professional dark-mode JavaFX desktop app for solar panel system sizing.
 Built on Java 23 + JavaFX 23 + Maven 3.9.
 
 ---
@@ -11,6 +11,7 @@ Built on Java 23 + JavaFX 23 + Maven 3.9.
 SolarWizard/
 ├── pom.xml
 ├── run.bat                        ← Quick build + run (Windows)
+├── src/main/java/module-info.java
 └── src/main/java/com/solarwizard/
     ├── app/
     │   ├── Launcher.java          ← Entry point (fat JAR compatible)
@@ -20,8 +21,11 @@ SolarWizard/
     │   ├── SolarPanel.java        ← Panel model + product catalog ← EDIT HERE
     │   └── SolarProject.java      ← Central data store for entire wizard
     ├── service/
+    │   ├── AppSettings.java       ← Persistent app settings
     │   ├── CalcService.java       ← All formulas (edit formulas here)
-    │   └── ValidationService.java ← All warning/validation checks
+    │   ├── ProjectSerializer.java ← Save/load project data
+    │   ├── ProjectStore.java      ← Project persistence helpers
+    │   └── ValidationService.java ← Warning and validation checks
     ├── util/
     │   └── UiUtils.java           ← Reusable UI factory methods
     └── view/
@@ -29,27 +33,37 @@ SolarWizard/
         ├── WizardShell.java       ← Sidebar nav + step container
         └── steps/
             ├── Step1LoadAnalysis.java
+            ├── Step2EnergyRequirement.java
             ├── Step2PanelSizing.java
             ├── Step3InverterSizing.java
-            ├── Step4StringConfig.java
-            ├── Step5BatterySizing.java
-            ├── Step6WireSizing.java
-            ├── Step7BreakerSizing.java
-            └── Step8Summary.java
+            ├── Step4BatterySizing.java
+            ├── Step5ChargeController.java
+            ├── Step5WireSizing.java
+            ├── Step6BreakerSizing.java
+            └── Step7Summary.java
+
+src/main/resources/com/solarwizard/
+├── css/
+│   └── dark-theme.css
+└── fxml/
 ```
 
 ---
 
 ## 🚀 How to Build & Run
 
+### Option 1 — Quick (double-click)
+```
+run.bat
+```
 
-### Option 1 — Manual Maven
+### Option 2 — Manual Maven
 ```cmd
 mvn clean package
 java -jar target/SolarWizard-fat.jar
 ```
 
-### Option 2 — Maven JavaFX plugin (dev mode)
+### Option 3 — Maven JavaFX plugin (dev mode)
 ```cmd
 mvn javafx:run
 ```
@@ -67,16 +81,16 @@ mvn clean package
 
 **Step 2 — Package as EXE:**
 ```cmd
-jpackage ^
-  --input target ^
-  --name "SolarWizard" ^
-  --main-jar SolarWizard-fat.jar ^
-  --main-class com.solarwizard.app.Launcher ^
-  --type exe ^
-  --win-shortcut ^
-  --win-menu ^
-  --app-version 1.0.0 ^
-  --vendor "Your Company" ^
+jpackage `
+  --input target `
+  --name "SolarWizard" `
+  --main-jar SolarWizard-fat.jar `
+  --main-class com.solarwizard.app.Launcher `
+  --type exe `
+  --win-shortcut `
+  --win-menu `
+  --app-version 1.0.0 `
+  --vendor "Your Company" `
   --dest dist
 ```
 

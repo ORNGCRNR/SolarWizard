@@ -22,11 +22,12 @@ public class ValidationService {
                 String.format("Required load with margin (%.0fW) exceeds inverter rated power (%.0fW).", withMargin, rated),
                 Warning.Severity.ERROR));
         }
-        if (p.getInverterSysVoltage() > 0 && p.getBatteryVoltage() > 0
-            && Math.abs(p.getInverterSysVoltage() - p.getBatteryVoltage()) > 0.1) {
+        double inverterInputVoltage = p.getBatteryVoltage();
+        if (inverterInputVoltage > 0 && p.getBatteryVoltage() > 0
+            && Math.abs(inverterInputVoltage - p.getBatteryVoltage()) > 0.1) {
             w.add(new Warning(
                 String.format("Inverter input voltage (%.0fV) should match the battery bank voltage (%.0fV).",
-                    p.getInverterSysVoltage(), p.getBatteryVoltage()),
+                    inverterInputVoltage, p.getBatteryVoltage()),
                 Warning.Severity.ERROR));
         }
         return w;
@@ -83,6 +84,15 @@ public class ValidationService {
         List<Warning> w = new ArrayList<>();
         if (p.getWireVoltageDrop() > 3)
             w.add(new Warning("Voltage drop above 3% causes significant energy loss. Recommended: ≤2% DC, ≤1% AC.", Warning.Severity.CAUTION));
+        for (double current : wireRunCurrents(p)) {
+            int breakerA = CalcService.standardBreakerSize(current);
+            if (CalcService.lookupPecCopper(breakerA) == null) {
+                w.add(new Warning(
+                    "Wire run current exceeds PEC Table 2.50.6.13 maximum (6000 A). Manual sizing required.",
+                    Warning.Severity.ERROR));
+                break;
+            }
+        }
         return w;
     }
 
@@ -93,5 +103,22 @@ public class ValidationService {
         all.addAll(validateBattery(p));
         all.addAll(validateWiring(p));
         return all;
+    }
+
+    private static double[] wireRunCurrents(SolarProject p) {
+        double inverterWatts = inverterWatts(p);
+        double batteryVoltage = p.getBatteryVoltage();
+        return new double[] {
+            p.getResultArrayImp(),
+            batteryVoltage > 0 ? p.getResultTotalPvW() / batteryVoltage : 0,
+            batteryVoltage > 0 ? inverterWatts / batteryVoltage : 0,
+            inverterWatts / 220.0
+        };
+    }
+
+    private static double inverterWatts(SolarProject p) {
+        return p.getInverterRatedPower() > 0
+            ? p.getInverterRatedPower()
+            : p.getResultInverterMinW();
     }
 }

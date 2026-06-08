@@ -370,8 +370,7 @@ public class Step1LoadAnalysis implements WizardShell.StepView {
         HBox tiles = new HBox(12,
             makeTile("Connected Load (All On)",   lblConnectedLoad),
             makeTile("Peak Simultaneous Load",    lblPeakLoad),
-            makeTile("Demand Factor (System)",    lblSystemDf),
-            makeTile("Recommended Inverter (Peak)", lblRecInv));
+            makeTile("Demand Factor (System)",    lblSystemDf));
         tiles.getChildren().forEach(n -> HBox.setHgrow(n, Priority.ALWAYS));
 
         HBox formula = UiUtils.formulaBanner(

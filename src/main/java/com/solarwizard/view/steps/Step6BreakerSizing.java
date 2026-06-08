@@ -5,9 +5,11 @@ import com.solarwizard.service.CalcService;
 import com.solarwizard.util.UiUtils;
 import com.solarwizard.view.WizardShell;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.scene.text.TextAlignment;
 
 /**
  * Step 8 - Circuit breaker sizing.
@@ -64,6 +66,8 @@ public class Step6BreakerSizing implements WizardShell.StepView {
             h.setPrefWidth(colWidths[i]);
             h.setMinWidth(colWidths[i]);
             h.setWrapText(true);
+            h.setAlignment(Pos.CENTER);
+            h.setTextAlignment(TextAlignment.CENTER);
             headerRow.getChildren().add(h);
         }
 
@@ -79,6 +83,8 @@ public class Step6BreakerSizing implements WizardShell.StepView {
             nameCell.getStyleClass().add("table-cell");
             nameCell.setPrefWidth(colWidths[0]);
             nameCell.setMinWidth(colWidths[0]);
+            nameCell.setAlignment(Pos.CENTER);
+            nameCell.setTextAlignment(TextAlignment.CENTER);
             dataRow.getChildren().add(nameCell);
 
             for (int c = 0; c < 5; c++) {
@@ -88,6 +94,8 @@ public class Step6BreakerSizing implements WizardShell.StepView {
                 if (c == 3) tableCells[r][c].getStyleClass().add(r < 3 ? "badge-dc" : "badge-ac");
                 tableCells[r][c].setPrefWidth(colWidths[c + 1]);
                 tableCells[r][c].setMinWidth(colWidths[c + 1]);
+                tableCells[r][c].setAlignment(Pos.CENTER);
+                tableCells[r][c].setTextAlignment(TextAlignment.CENTER);
                 dataRow.getChildren().add(tableCells[r][c]);
             }
             tableBox.getChildren().add(dataRow);

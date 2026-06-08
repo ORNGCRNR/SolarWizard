@@ -98,6 +98,7 @@ public class ProjectSerializer {
         w(lines, "batteryVoltage",       p.getBatteryVoltage());
         w(lines, "batteryCapacityAh",    p.getBatteryCapacityAh());
         w(lines, "batteryDod",           p.getBatteryDod());
+        w(lines, "batteryQuantity",      p.getBatteryQuantity());
         w(lines, "autonomyHours",        p.getAutonomyHours());
 
         // Step 5
@@ -178,6 +179,7 @@ public class ProjectSerializer {
                     case "batteryVoltage"       -> p.setBatteryVoltage(d(val));
                     case "batteryCapacityAh"    -> p.setBatteryCapacityAh(d(val));
                     case "batteryDod"           -> p.setBatteryDod(d(val));
+                    case "batteryQuantity"      -> p.setBatteryQuantity(i(val));
                     case "autonomyHours"        -> p.setAutonomyHours(d(val));
                     case "wirePvToInverterM"    -> p.setWirePvToInverterM(d(val));
                     case "wireSccToBatteryM"    -> p.setWireSccToBatteryM(d(val));

@@ -26,6 +26,33 @@ public class CalcService {
         new AwgEntry( 0,53.50, 49, 170),
     };
 
+    // ── PEC Table 2.50.6.13 copper conductor lookup ─────────────────────────
+    public record PecEntry(int maxAmps, double mmDia) {}
+
+    public static final PecEntry[] PEC_COPPER_TABLE = {
+        new PecEntry(15,   2.0),
+        new PecEntry(20,   3.5),
+        new PecEntry(30,   5.5),
+        new PecEntry(40,   5.5),
+        new PecEntry(60,   5.5),
+        new PecEntry(100,  8.0),
+        new PecEntry(200,  14.0),
+        new PecEntry(300,  22.0),
+        new PecEntry(400,  30.0),
+        new PecEntry(500,  30.0),
+        new PecEntry(600,  38.0),
+        new PecEntry(800,  50.0),
+        new PecEntry(1000, 60.0),
+        new PecEntry(1200, 80.0),
+        new PecEntry(1600, 100.0),
+        new PecEntry(2000, 125.0),
+        new PecEntry(2500, 175.0),
+        new PecEntry(3000, 200.0),
+        new PecEntry(4000, 250.0),
+        new PecEntry(5000, 375.0),
+        new PecEntry(6000, 400.0),
+    };
+
     private static final int[] STANDARD_INVERTER_SIZES =
         {300, 500, 1000, 1500, 2000, 3000, 5000, 6000, 8000, 10000};
 
@@ -188,6 +215,34 @@ public class CalcService {
         return AWG_TABLE[AWG_TABLE.length - 1];
     }
 
+    public static PecEntry lookupPecCopper(double breakerRating) {
+        for (PecEntry entry : PEC_COPPER_TABLE) {
+            if (entry.maxAmps() >= breakerRating) return entry;
+        }
+        return null;
+    }
+
+    // ── Resistivity-based voltage drop (copper) ───────────────────────────────
+    // Formula: Vdrop = I × 2 × L(m) × R(Ω/km) / 1000  where R = 1e9 × ρ / area_mm²
+    private static final double COPPER_RESISTIVITY = 1.72e-8; // Ω·m
+
+    /** Copper wire resistance in Ω/km for a given cross-sectional area (mm²). */
+    public static double copperResistanceOhmPerKm(double areaMm2) {
+        if (areaMm2 <= 0) return 0;
+        return 1e9 * COPPER_RESISTIVITY / areaMm2;
+    }
+
+    /** DC single-pair voltage drop in volts: I × 2 × L(m) × R(Ω/km) / 1000. */
+    public static double voltageDropVolts(double currentA, double distM, double areaMm2) {
+        return currentA * 2.0 * distM * copperResistanceOhmPerKm(areaMm2) / 1000.0;
+    }
+
+    /** Voltage drop as a percentage of system voltage. */
+    public static double voltageDropPercent(double vdropV, double systemVoltage) {
+        if (systemVoltage <= 0) return 0;
+        return (vdropV / systemVoltage) * 100.0;
+    }
+
     // ── Step 8: Breaker Sizing ────────────────────────────────────────────────
     public static int breakerSize(double currentA) {
         return standardBreakerSize(currentA * 1.25);
@@ -218,7 +273,7 @@ public class CalcService {
         // Step 3
         double reqAh = requiredBatteryAh(totalEnergyRequirement, p.getBatteryVoltage());
         p.setResultBatteryAh(reqAh);
-        int batteries = batteriesNeeded(reqAh, p.getBatteryCapacityAh());
+        int batteries = p.getBatteryQuantity();
         p.setResultBatteriesNeeded(batteries);
         double bankEnergyWh = batteryBankEnergyWh(batteries, p.getBatteryVoltage(), p.getBatteryCapacityAh());
         p.setResultBatteryBankEnergyWh(bankEnergyWh);

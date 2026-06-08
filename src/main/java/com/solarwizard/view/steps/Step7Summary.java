@@ -2,6 +2,7 @@ package com.solarwizard.view.steps;
 
 import com.solarwizard.model.SolarProject;
 import com.solarwizard.service.CalcService;
+import com.solarwizard.service.CalcService.PecEntry;
 import com.solarwizard.service.ValidationService;
 import com.solarwizard.util.UiUtils;
 import com.solarwizard.view.WizardShell;
@@ -111,21 +112,33 @@ public class Step7Summary implements WizardShell.StepView {
             row("Adjusted Appliance Load", UiUtils.fmt0(CalcService.adjustedLoadWatts(project.getAppliances())) + " W"),
             row("Minimum Inverter Watts", UiUtils.fmt0(project.getResultInverterMinW()) + " W"),
             row("Selected Rated Power", UiUtils.fmt0(project.getInverterRatedPower()) + " W"),
-            row("Input Voltage", UiUtils.fmt0(project.getInverterSysVoltage()) + " V")
+            row("Battery Voltage", UiUtils.fmt0(project.getBatteryVoltage()) + " V")
         ));
 
         double inverterWatts = inverterWatts();
         double battV = project.getBatteryVoltage();
-        AwgResult phase1 = calcAwg(project.getResultArrayImp(), project.getResultArrayVmp(), project.getWirePvToInverterM(), project.getWireVoltageDrop());
-        AwgResult phase2 = calcAwg(battV > 0 ? project.getResultTotalPvW() / battV : 0, battV, project.getWireSccToBatteryM(), project.getWireVoltageDrop());
-        AwgResult phase3 = calcAwg(battV > 0 ? inverterWatts / battV : 0, battV, project.getWireBatteryToInverterM(), project.getWireVoltageDrop());
-        AwgResult phase4 = calcAwg(inverterWatts / 220.0, 220.0, project.getWireInverterToLoadM(), 1.0);
+        WireResult phase1 = calcWire(project.getResultArrayImp(), project.getResultArrayVmp(),
+            project.getWirePvToInverterM(), project.getWireVoltageDrop());
+        WireResult phase2 = calcWire(battV > 0 ? project.getResultTotalPvW() / battV : 0,
+            battV, project.getWireSccToBatteryM(), project.getWireVoltageDrop());
+        WireResult phase3 = calcWire(battV > 0 ? inverterWatts / battV : 0,
+            battV, project.getWireBatteryToInverterM(), project.getWireVoltageDrop());
+        WireResult phase4 = calcWire(inverterWatts / 220.0,
+            220.0, project.getWireInverterToLoadM(), 1.0);
 
         mainContent.getChildren().add(sectionCard("Step 7: Wire Sizing",
-            row("Panels to SCC", wireText(project.getWirePvToInverterM(), phase1)),
-            row("SCC to Battery", wireText(project.getWireSccToBatteryM(), phase2)),
-            row("Battery to Inverter", wireText(project.getWireBatteryToInverterM(), phase3)),
-            row("Inverter to AC Load", wireText(project.getWireInverterToLoadM(), phase4))
+            row("Panels to SCC", wireText(project.getWirePvToInverterM(), phase1.awg())),
+            row("  VDrop", vdropText(phase1.vdrop())),
+            row("  PEC (Copper)", pecText(phase1.pec())),
+            row("SCC to Battery", wireText(project.getWireSccToBatteryM(), phase2.awg())),
+            row("  VDrop", vdropText(phase2.vdrop())),
+            row("  PEC (Copper)", pecText(phase2.pec())),
+            row("Battery to Inverter", wireText(project.getWireBatteryToInverterM(), phase3.awg())),
+            row("  VDrop", vdropText(phase3.vdrop())),
+            row("  PEC (Copper)", pecText(phase3.pec())),
+            row("Inverter to AC Load", wireText(project.getWireInverterToLoadM(), phase4.awg())),
+            row("  VDrop", vdropText(phase4.vdrop())),
+            row("  PEC (Copper)", pecText(phase4.pec()))
         ));
 
         mainContent.getChildren().add(sectionCard("Step 8: Circuit Breaker Sizing",
@@ -170,16 +183,42 @@ public class Step7Summary implements WizardShell.StepView {
     }
 
     private record AwgResult(int awg, String mm2) {}
+    private record PecWireResult(int breakerSize, PecEntry entry) {}
+    private record VDropResult(double volts, double percent) {}
+    private record WireResult(AwgResult awg, PecWireResult pec, VDropResult vdrop) {}
 
-    private AwgResult calcAwg(double current, double voltage, double distM, double voltageDropPct) {
+    private WireResult calcWire(double current, double voltage, double distM, double voltageDropPct) {
         double distFt = CalcService.metresToFeet(distM);
         double vdi = CalcService.vdi(current, distFt, voltage, voltageDropPct);
         CalcService.AwgEntry e = CalcService.lookupAwg(vdi);
-        return new AwgResult(e.awg(), UiUtils.fmt2(e.areaMm2()));
+        double vdropV   = CalcService.voltageDropVolts(current, distM, e.areaMm2());
+        double vdropPct = CalcService.voltageDropPercent(vdropV, voltage);
+        return new WireResult(
+            new AwgResult(e.awg(), UiUtils.fmt2(e.areaMm2())),
+            calcPecWire(current),
+            new VDropResult(vdropV, vdropPct));
+    }
+
+    private PecWireResult calcPecWire(double current) {
+        int breakerSize = CalcService.standardBreakerSize(current);
+        return new PecWireResult(breakerSize, CalcService.lookupPecCopper(breakerSize));
     }
 
     private String wireText(double distanceM, AwgResult awg) {
         return UiUtils.fmt0(distanceM) + " m -> AWG " + awg.awg() + " (" + awg.mm2() + " mm2)";
+    }
+
+    private String pecText(PecWireResult result) {
+        PecEntry entry = result.entry();
+        if (entry == null) {
+            return "—";
+        }
+        return "Breaker " + result.breakerSize() + " A → "
+            + UiUtils.fmt1(entry.mmDia()) + " mm dia.";
+    }
+
+    private String vdropText(VDropResult v) {
+        return UiUtils.fmt2(v.volts()) + " V  (" + UiUtils.fmt2(v.percent()) + "%)";
     }
 
     private String breakerText(double minimumCurrent, String type) {

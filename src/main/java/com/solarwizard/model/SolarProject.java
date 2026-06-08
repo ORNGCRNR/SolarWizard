@@ -65,6 +65,7 @@ public class SolarProject {
     private double  batteryVoltage    = 12;
     private double  batteryCapacityAh = 100;
     private double  batteryDod        = 0.50;
+    private int     batteryQuantity   = 1;
     private double  autonomyHours     = 48;   // stored as hours; UI presents days of autonomy
 
     // ── Step 7: Wire Sizing ───────────────────────────────────────────────────
@@ -179,6 +180,8 @@ public class SolarProject {
     public void      setBatteryCapacityAh(double v){ batteryCapacityAh = v; }
     public double    getBatteryDod()            { return batteryDod; }
     public void      setBatteryDod(double v)    { batteryDod = v; }
+    public int       getBatteryQuantity()        { return batteryQuantity; }
+    public void      setBatteryQuantity(int v)   { batteryQuantity = v; }
     public double    getAutonomyHours()         { return autonomyHours; }
     public void      setAutonomyHours(double v) { autonomyHours = v; }
     public double    getAutonomyDays()          { return autonomyHours / 24.0; }
