@@ -14,6 +14,7 @@ import javafx.stage.Stage;
 public class MainApp extends Application {
 
     public static final String APP_TITLE   = "Solar Sizing Wizard";
+    private static final String APP_ICON   = "/com/solarwizard/images/app-logo.png";
     public static final int    WINDOW_W    = 1280;
     public static final int    WINDOW_H    = 780;
 
@@ -27,10 +28,18 @@ public class MainApp extends Application {
             getClass().getResource("/com/solarwizard/css/dark-theme.css").toExternalForm());
 
         stage.setTitle(APP_TITLE);
+        setAppIcon(stage);
         stage.setMinWidth(900);
         stage.setMinHeight(620);
         stage.setScene(scene);
         stage.show();
+    }
+
+    private static void setAppIcon(Stage stage) {
+        var iconUrl = MainApp.class.getResource(APP_ICON);
+        if (iconUrl != null) {
+            stage.getIcons().add(new Image(iconUrl.toExternalForm()));
+        }
     }
 
     public static void main(String[] args) {

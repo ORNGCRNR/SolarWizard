@@ -112,7 +112,7 @@ public class ValidationService {
             p.getResultArrayImp(),
             batteryVoltage > 0 ? p.getResultTotalPvW() / batteryVoltage : 0,
             batteryVoltage > 0 ? inverterWatts / batteryVoltage : 0,
-            inverterWatts / 220.0
+            CalcService.inverterAcLoadCurrent(inverterWatts)
         };
     }
 

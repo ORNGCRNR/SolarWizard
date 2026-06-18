@@ -241,7 +241,7 @@ public class Step5WireSizing implements WizardShell.StepView {
             batteryVoltage, project.getWireSccToBatteryM(), project.getWireVoltageDrop());
         fillRow(2, batteryVoltage > 0 ? inverterWatts / batteryVoltage : 0,
             batteryVoltage, project.getWireBatteryToInverterM(), project.getWireVoltageDrop());
-        fillRow(3, inverterWatts / 220.0, 220.0,
+        fillRow(3, CalcService.inverterAcLoadCurrent(inverterWatts), CalcService.AC_LOAD_VOLTAGE,
             project.getWireInverterToLoadM(), 1.0);
 
         warningBox.getChildren().clear();

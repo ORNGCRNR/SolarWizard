@@ -170,13 +170,14 @@ public class Step6BreakerSizing implements WizardShell.StepView {
         double phase3Current = batteryVoltage > 0 ? inverterWatts / batteryVoltage : 0;
         double phase3Minimum = phase3Current * 1.25;
 
-        double phase4Current = inverterWatts / 220.0;
+        double phase4Current = CalcService.inverterAcLoadCurrent(inverterWatts);
         double phase4Minimum = phase4Current * 1.25;
 
         fillRow(0, phase1Current, phase1Minimum, CalcService.standardBreakerSize(phase1Minimum), "DC MCB", "PV DC");
         fillRow(1, phase2Current, phase2Minimum, CalcService.standardBreakerSize(phase2Minimum), "DC MCB", UiUtils.fmt0(batteryVoltage) + "V DC");
         fillRow(2, phase3Current, phase3Minimum, CalcService.standardBreakerSize(phase3Minimum), "DC MCB", UiUtils.fmt0(batteryVoltage) + "V DC");
-        fillRow(3, phase4Current, phase4Minimum, CalcService.standardBreakerSize(phase4Minimum), "AC MCB", "220V AC");
+        fillRow(3, phase4Current, phase4Minimum, CalcService.standardBreakerSize(phase4Minimum), "AC MCB",
+            UiUtils.fmt0(CalcService.AC_LOAD_VOLTAGE) + "V AC");
 
         formulaLbl.setText(
             "Phase 1: Isc_adjusted x 1.25 x 1.25. Phase 2: SCC rated current x 1.25 preferred. Phase 3/4: inverter current x 1.25.");

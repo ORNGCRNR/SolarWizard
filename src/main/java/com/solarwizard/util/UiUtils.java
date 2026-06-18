@@ -143,6 +143,7 @@ public final class UiUtils {
 
     /** Format double to 2 decimal places */
     public static String fmt2(double v) { return String.format("%.2f", v); }
+    public static String fmtPercent(double ratio) { return String.format("%.0f%%", ratio * 100.0); }
     public static String fmt1(double v) { return String.format("%.1f", v); }
     public static String fmt0(double v) { return String.format("%.0f", v); }
 }

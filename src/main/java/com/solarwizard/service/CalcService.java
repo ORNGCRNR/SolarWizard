@@ -11,6 +11,8 @@ import java.util.List;
  */
 public class CalcService {
 
+    public static final double AC_LOAD_VOLTAGE = 230.0;
+
     // ── AWG lookup table ──────────────────────────────────────────────────────
     public record AwgEntry(int awg, double areaMm2, int vdiMax, int maxAmps) {}
 
@@ -191,6 +193,10 @@ public class CalcService {
             if (size >= minWatts) return size;
         }
         return STANDARD_INVERTER_SIZES[STANDARD_INVERTER_SIZES.length - 1];
+    }
+
+    public static double inverterAcLoadCurrent(double inverterWatts) {
+        return inverterWatts / AC_LOAD_VOLTAGE;
     }
 
     // ── Shared sizing helpers ─────────────────────────────────────────────────

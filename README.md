@@ -91,6 +91,7 @@ jpackage `
   --win-menu `
   --app-version 1.0.0 `
   --vendor "Your Company" `
+  --icon "src\main\resources\com\solarwizard\images\app-logo.ico" `
   --dest dist
 ```
 

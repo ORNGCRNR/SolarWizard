@@ -44,7 +44,7 @@ public class Step1LoadAnalysis implements WizardShell.StepView {
     private final Label lblHourlyAvg     = new Label("0 W");
     private final Label lblConnectedLoad = new Label("0 W");
     private final Label lblPeakLoad      = new Label("0 W");
-    private final Label lblSystemDf      = new Label("0.00");
+    private final Label lblSystemDf      = new Label("0%");
     private final Label lblRecInv        = new Label("0 W");
     private final Label formulaLbl       = new Label();
 
@@ -173,7 +173,7 @@ public class Step1LoadAnalysis implements WizardShell.StepView {
             colHdr("Peak Hr",     W_PEAK,
                 "Hours this appliance runs during the system peak usage window. Used to derive the Demand Factor."),
             colHdr("DF",          W_DF,
-                "Demand Factor - derived automatically from Peak Hr / Hrs/Day. Read-only."),
+                "Demand Factor - derived automatically from Peak Hr / Hrs/Day. Displayed as a percentage."),
             colHdr("Qty",         W_QTY),
             colHdr("Motor?",      W_MOTOR),
             colHdr("Wh/day",      W_KWH),
@@ -226,7 +226,7 @@ public class Step1LoadAnalysis implements WizardShell.StepView {
         peakCell.setMinWidth(W_PEAK);
         peakCell.setMaxWidth(W_PEAK);
 
-        Label dfLbl = new Label(UiUtils.fmt2(appliance.getDemandFactor()));
+        Label dfLbl = new Label(UiUtils.fmtPercent(appliance.getDemandFactor()));
         dfLbl.setPrefWidth(W_DF);
         dfLbl.setMinWidth(W_DF);
         dfLbl.setMaxWidth(W_DF);
@@ -257,7 +257,7 @@ public class Step1LoadAnalysis implements WizardShell.StepView {
 
         Runnable updatePeakCell = () -> {
             double df = appliance.getDemandFactor();
-            dfLbl.setText(UiUtils.fmt2(df));
+            dfLbl.setText(UiUtils.fmtPercent(df));
             dfLbl.setStyle(df > 1.0 ? "-fx-text-fill: #f97316;" : "");
 
             boolean overrun = appliance.getHoursPerDay() > 0 && appliance.getPeakHours() > appliance.getHoursPerDay();
@@ -403,13 +403,13 @@ public class Step1LoadAnalysis implements WizardShell.StepView {
 
         lblConnectedLoad.setText(UiUtils.fmt0(connectedLoad) + " W");
         lblPeakLoad.setText(UiUtils.fmt0(peakLoad) + " W");
-        lblSystemDf.setText(UiUtils.fmt2(systemDf));
+        lblSystemDf.setText(UiUtils.fmtPercent(systemDf));
         lblRecInv.setText(UiUtils.fmt0(recInv) + " W");
 
         peakWarnBox.getChildren().clear();
         if (CalcService.hasPeakHoursOverrun(project.getAppliances())) {
             peakWarnBox.getChildren().add(UiUtils.warningBanner(
-                "One or more appliances have Peak Hr greater than Hrs/Day. Demand Factor has been clamped to 1.0 for those rows in calculations."));
+                "One or more appliances have Peak Hr greater than Hrs/Day. Demand Factor has been clamped to 100% for those rows in calculations."));
         }
 
         double monthlyKwh = switch (project.getLoadMode()) {

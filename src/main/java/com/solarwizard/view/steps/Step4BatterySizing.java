@@ -115,7 +115,7 @@ public class Step4BatterySizing implements WizardShell.StepView {
         spQty.valueProperty().addListener((o, a, n) -> { project.setBatteryQuantity(n); recalculate(); });
 
         HBox row1 = new HBox(12,
-            UiUtils.labeledField("Nominal Voltage (V)",       voltageBox, "Common: 12V, 24V, 48V, 51.2V (LiFePO4)"),
+            UiUtils.labeledField("Nominal Voltage of Battery(V)",       voltageBox, "Common: 12V, 24V, 48V, 51.2V (LiFePO4)"),
             UiUtils.labeledField("Capacity (Ah)",     spAh,       null),
             UiUtils.labeledField("Battery Quantity",  spQty,      "Number of batteries in the bank"));
         row1.getChildren().forEach(n -> HBox.setHgrow(n, Priority.ALWAYS));

@@ -123,8 +123,8 @@ public class Step7Summary implements WizardShell.StepView {
             battV, project.getWireSccToBatteryM(), project.getWireVoltageDrop());
         WireResult phase3 = calcWire(battV > 0 ? inverterWatts / battV : 0,
             battV, project.getWireBatteryToInverterM(), project.getWireVoltageDrop());
-        WireResult phase4 = calcWire(inverterWatts / 220.0,
-            220.0, project.getWireInverterToLoadM(), 1.0);
+        WireResult phase4 = calcWire(CalcService.inverterAcLoadCurrent(inverterWatts),
+            CalcService.AC_LOAD_VOLTAGE, project.getWireInverterToLoadM(), 1.0);
 
         mainContent.getChildren().add(sectionCard("Step 7: Wire Sizing",
             row("Panels to SCC", wireText(project.getWirePvToInverterM(), phase1.awg())),
@@ -145,7 +145,7 @@ public class Step7Summary implements WizardShell.StepView {
             row("Panels to SCC", breakerText(project.getResultArrayIsc() * 1.25 * 1.25, "DC MCB")),
             row("SCC to Battery", breakerText(phase2BreakerMinimum(), "DC MCB")),
             row("Battery to Inverter", breakerText((battV > 0 ? inverterWatts / battV : 0) * 1.25, "DC MCB")),
-            row("Inverter to AC Load", breakerText((inverterWatts / 220.0) * 1.25, "AC MCB"))
+            row("Inverter to AC Load", breakerText(CalcService.inverterAcLoadCurrent(inverterWatts) * 1.25, "AC MCB"))
         ));
 
         mainContent.getChildren().add(buildNavRow());
