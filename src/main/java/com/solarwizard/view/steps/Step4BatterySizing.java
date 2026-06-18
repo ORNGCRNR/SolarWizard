@@ -48,7 +48,7 @@ public class Step4BatterySizing implements WizardShell.StepView {
     private void build() {
         mainContent.setPadding(new Insets(24, 28, 24, 28));
         mainContent.getStyleClass().add("step-content");
-        mainContent.getChildren().add(UiUtils.stepTitle("3", "Step 3: Battery Bank Sizing"));
+        mainContent.getChildren().add(UiUtils.stepTitle("3", "Step 3: Battery Bank Sizing", shell::showCurrentStepGuide));
         mainContent.getChildren().add(warningBox);
         mainContent.getChildren().add(buildInputForm());
         mainContent.getChildren().add(buildSpecsCard());

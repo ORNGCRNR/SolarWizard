@@ -1,0 +1,344 @@
+/* Light theme overrides. dark-theme.css stays loaded as the base sheet. */
+
+.root {
+    -fx-background-color: #dde5ee;
+    -fx-text-fill: #172033;
+}
+
+.scroll-pane, .step-scroll, .dashboard-scroll {
+    -fx-background-color: #dde5ee;
+    -fx-background: #dde5ee;
+}
+.scroll-pane .viewport, .step-scroll .viewport, .dashboard-scroll .viewport {
+    -fx-background-color: #dde5ee;
+}
+.scroll-bar { -fx-background-color: #cfd9e5; }
+.scroll-bar .thumb { -fx-background-color: #94a3b8; }
+
+.dashboard, .wizard-shell, .step-content {
+    -fx-background-color: #dde5ee;
+}
+.dashboard-title, .step-title, .report-title {
+    -fx-text-fill: #111827;
+}
+.dashboard-subtitle, .report-subtitle {
+    -fx-text-fill: #52657a;
+}
+.dashboard-sun-toggle {
+    -fx-text-fill: #f59e0b;
+}
+.dashboard-sun-toggle:hover {
+    -fx-text-fill: #d97706;
+}
+
+.sidebar {
+    -fx-background-color: #e4ebf2;
+    -fx-border-color: #c8d3df;
+}
+.sidebar-divider {
+    -fx-background-color: #cfd9e5;
+}
+.back-btn, .nav-btn {
+    -fx-text-fill: #405166;
+}
+.back-btn:hover, .nav-btn:hover {
+    -fx-background-color: #d6e0eb;
+    -fx-text-fill: #111827;
+}
+.nav-btn-active {
+    -fx-background-color: #c9dcf4;
+    -fx-text-fill: #1d4f91;
+    -fx-border-color: #2f6fd6;
+}
+.sidebar-project-name {
+    -fx-text-fill: #64748b;
+    -fx-border-color: #cfd9e5;
+}
+
+.card, .stat-card, .specs-card, .wire-table, .device-table, .report-card {
+    -fx-background-color: #e8eef5;
+    -fx-border-color: #c8d3df;
+}
+.stat-count, .metric-blue, .spec-highlight, .breaker-size, .report-section-title {
+    -fx-text-fill: #2563eb;
+}
+.stat-icon, .dashboard-sun-toggle {
+    -fx-text-fill: #f59e0b;
+}
+.stat-label, .field-label, .kwh-label, .table-title, .specs-title,
+.type-card-features, .metric-label {
+    -fx-text-fill: #5d7085;
+}
+.section-title, .project-name, .type-card-title, .awg-value {
+    -fx-text-fill: #172033;
+}
+.field-hint, .empty-msg, .empty-sub, .spec-key, .report-key,
+.type-card-note {
+    -fx-text-fill: #64748b;
+}
+.empty-icon {
+    -fx-text-fill: #b8c4d2;
+}
+
+.search-field, .styled-field, .styled-spinner .text-field,
+.combo-box, .panel-combo, .device-combo {
+    -fx-background-color: #e3ebf3;
+    -fx-text-fill: #172033;
+    -fx-prompt-text-fill: #8da0b5;
+    -fx-border-color: #c8d3df;
+}
+.search-field:focused, .styled-field:focused {
+    -fx-border-color: #2f6fd6;
+}
+.styled-spinner .increment-arrow-button,
+.styled-spinner .decrement-arrow-button {
+    -fx-background-color: #d5dfeb;
+}
+.styled-spinner .increment-arrow-button:hover,
+.styled-spinner .decrement-arrow-button:hover {
+    -fx-background-color: #c2cfde;
+}
+.styled-spinner .increment-arrow, .styled-spinner .decrement-arrow {
+    -fx-background-color: #405166;
+}
+.readonly-value {
+    -fx-text-fill: #334155;
+}
+
+.combo-box .list-cell, .panel-combo .list-cell {
+    -fx-text-fill: #172033;
+    -fx-background-color: #e3ebf3;
+}
+.combo-box-popup .list-view {
+    -fx-background-color: #e3ebf3;
+    -fx-border-color: #c8d3df;
+}
+.combo-box-popup .list-cell {
+    -fx-text-fill: #172033;
+}
+.combo-box-popup .list-cell:hover {
+    -fx-background-color: #c9dcf4;
+}
+.combo-box-popup .list-cell:selected {
+    -fx-background-color: #2f6fd6;
+    -fx-text-fill: #f3f7fb;
+}
+.combo-box .arrow {
+    -fx-background-color: #405166;
+}
+
+.project-row, .device-row, .mode-bar, .chip-scroll {
+    -fx-background-color: #dfe8f1;
+    -fx-border-color: #c8d3df;
+}
+.project-row:hover, .device-row:hover {
+    -fx-background-color: #d3deea;
+}
+.device-table-header {
+    -fx-background-color: #cfd9e5;
+}
+.col-header {
+    -fx-text-fill: #405166;
+}
+.table-row-even {
+    -fx-background-color: #e8eef5;
+}
+.table-row-odd {
+    -fx-background-color: #dfe8f1;
+}
+.table-cell, .spec-value, .report-value {
+    -fx-text-fill: #172033;
+}
+.spec-row, .report-row {
+    -fx-border-color: #cfd9e5;
+}
+
+.metric-tile {
+    -fx-background-color: #dfeaf7;
+    -fx-border-color: #b9cbe2;
+}
+.metric-value {
+    -fx-text-fill: #172033;
+}
+.metric-default {
+    -fx-text-fill: #172033;
+}
+.metric-orange, .motor-flag {
+    -fx-text-fill: #c45a15;
+}
+.metric-green, .project-status, .save-feedback {
+    -fx-text-fill: #15803d;
+}
+
+.mode-btn {
+    -fx-text-fill: #405166;
+}
+.mode-btn:hover {
+    -fx-background-color: #cfd9e5;
+    -fx-text-fill: #172033;
+}
+.mode-btn-active {
+    -fx-background-color: #2f6fd6;
+    -fx-text-fill: #f3f7fb;
+}
+
+.chip-scroll .viewport {
+    -fx-background-color: #dfe8f1;
+}
+.chip-btn, .row-icon-btn, .nav-back-btn {
+    -fx-background-color: #d5dfeb;
+    -fx-text-fill: #334155;
+    -fx-border-color: #c8d3df;
+}
+.chip-btn:hover, .row-icon-btn:hover, .nav-back-btn:hover {
+    -fx-background-color: #c2cfde;
+    -fx-text-fill: #172033;
+}
+.create-btn, .add-device-btn {
+    -fx-text-fill: #1d4f91;
+    -fx-border-color: #2f6fd6;
+}
+.create-btn:hover, .add-device-btn:hover {
+    -fx-background-color: #c9dcf4;
+}
+.delete-btn, .row-delete-btn {
+    -fx-text-fill: #dc2626;
+}
+.delete-btn:hover, .row-delete-btn:hover {
+    -fx-background-color: #edd2d2;
+}
+
+.bottom-bar {
+    -fx-background-color: #e4ebf2;
+    -fx-border-color: #cfd9e5;
+    -fx-border-width: 1 0 0 0;
+}
+.start-btn, .row-open-btn, .nav-next-btn {
+    -fx-background-color: #2f6fd6;
+    -fx-text-fill: #f3f7fb;
+}
+.start-btn:hover, .row-open-btn:hover, .nav-next-btn:hover {
+    -fx-background-color: #245ab0;
+}
+.save-draft-btn {
+    -fx-background-color: #cfe8da;
+    -fx-text-fill: #166534;
+}
+.save-draft-btn:hover {
+    -fx-background-color: #b4dcc7;
+    -fx-text-fill: #14532d;
+}
+
+.formula-banner {
+    -fx-background-color: #cdddf1;
+    -fx-border-color: #2f6fd6;
+}
+.formula-text {
+    -fx-text-fill: #1d4f91;
+}
+.info-icon {
+    -fx-text-fill: #2f6fd6;
+}
+.warning-banner {
+    -fx-background-color: #f3dfbd;
+    -fx-border-color: #f59e0b;
+}
+.warn-text {
+    -fx-text-fill: #8a4b10;
+}
+.warn-icon {
+    -fx-text-fill: #c45a15;
+}
+.error-banner {
+    -fx-background-color: #edd2d2;
+    -fx-border-color: #dc2626;
+}
+.error-text {
+    -fx-text-fill: #991b1b;
+}
+.error-icon, .dismiss-btn {
+    -fx-text-fill: #dc2626;
+}
+.success-banner {
+    -fx-background-color: #cfe8da;
+    -fx-border-color: #16a34a;
+}
+.success-text, .success-icon {
+    -fx-text-fill: #166534;
+}
+
+.psw-card {
+    -fx-background-color: #cfe8da;
+    -fx-border-color: #16a34a;
+}
+.msw-card {
+    -fx-background-color: #dfe8f1;
+    -fx-border-color: #c8d3df;
+}
+.toggle-check {
+    -fx-text-fill: #405166;
+}
+.toggle-check:selected {
+    -fx-text-fill: #2f6fd6;
+}
+.toggle-btn {
+    -fx-background-color: #d5dfeb;
+    -fx-text-fill: #334155;
+}
+.toggle-btn-active {
+    -fx-background-color: #2f6fd6;
+    -fx-text-fill: #f3f7fb;
+}
+
+.step-icon {
+    -fx-text-fill: #2f6fd6;
+}
+.step-help-btn {
+    -fx-background-color: #cdddf1;
+    -fx-text-fill: #1d4f91;
+    -fx-border-color: #2f6fd6;
+}
+.step-help-btn:hover {
+    -fx-background-color: #2f6fd6;
+    -fx-text-fill: #f3f7fb;
+}
+
+.badge-dc {
+    -fx-background-color: #dfd2f4;
+    -fx-text-fill: #5b21b6;
+}
+.badge-ac {
+    -fx-background-color: #cddde8;
+    -fx-text-fill: #0c4a6e;
+}
+.report-sep {
+    -fx-background-color: #334155;
+}
+.separator .line {
+    -fx-border-color: #b8c5d2;
+}
+
+.guide-dialog, .guide-dialog > .content {
+    -fx-background-color: #e4ebf2;
+}
+.guide-dialog .button-bar .button {
+    -fx-background-color: #2f6fd6;
+    -fx-text-fill: #f3f7fb;
+}
+.guide-dialog .button-bar .button:hover {
+    -fx-background-color: #245ab0;
+}
+.guide-title {
+    -fx-text-fill: #172033;
+}
+.guide-text {
+    -fx-background-color: #e8eef5;
+    -fx-text-fill: #172033;
+    -fx-border-color: #c8d3df;
+}
+.guide-text .content {
+    -fx-background-color: #e8eef5;
+}
+.dir-path-lbl {
+    -fx-text-fill: #1d4f91;
+}

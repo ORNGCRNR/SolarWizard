@@ -34,7 +34,7 @@ public class Step2PanelSizing implements WizardShell.StepView {
     private void build() {
         mainContent.setPadding(new Insets(24, 28, 24, 28));
         mainContent.getStyleClass().add("step-content");
-        mainContent.getChildren().add(UiUtils.stepTitle("4", "Step 4: Solar Panel Sizing"));
+        mainContent.getChildren().add(UiUtils.stepTitle("4", "Step 4: Solar Panel Sizing", shell::showCurrentStepGuide));
         mainContent.getChildren().add(buildForm());
         mainContent.getChildren().add(buildResultTiles());
         HBox fb = UiUtils.formulaBanner(""); fb.getChildren().set(1, formulaLbl);

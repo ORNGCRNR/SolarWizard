@@ -38,7 +38,7 @@ public class Step6BreakerSizing implements WizardShell.StepView {
     private void build() {
         mainContent.setPadding(new Insets(24, 28, 24, 28));
         mainContent.getStyleClass().add("step-content");
-        mainContent.getChildren().add(UiUtils.stepTitle("8", "Step 8: Circuit Breaker Sizing"));
+        mainContent.getChildren().add(UiUtils.stepTitle("8", "Step 8: Circuit Breaker Sizing", shell::showCurrentStepGuide));
         mainContent.getChildren().add(buildTable());
         HBox fb = UiUtils.formulaBanner("");
         fb.getChildren().set(1, formulaLbl);

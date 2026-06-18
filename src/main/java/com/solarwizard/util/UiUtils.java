@@ -3,7 +3,9 @@ package com.solarwizard.util;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.stage.Window;
 
 /**
  * Reusable UI factory methods to keep controllers clean and consistent.
@@ -114,6 +116,10 @@ public final class UiUtils {
         lbl.getStyleClass().add("field-label");
         VBox box = new VBox(4, lbl, field);
         if (hint != null && !hint.isEmpty()) {
+            lbl.setTooltip(new Tooltip(hint));
+            if (field instanceof Control control) {
+                control.setTooltip(new Tooltip(hint));
+            }
             Label hintLbl = new Label(hint);
             hintLbl.getStyleClass().add("field-hint");
             box.getChildren().add(hintLbl);
@@ -132,13 +138,59 @@ public final class UiUtils {
 
     /** Step section title */
     public static HBox stepTitle(String icon, String title) {
+        return stepTitle(icon, title, null);
+    }
+
+    public static HBox stepTitle(String icon, String title, Runnable onGuide) {
         Label ico = new Label(icon);
         ico.getStyleClass().add("step-icon");
         Label lbl = new Label(title);
         lbl.getStyleClass().add("step-title");
         HBox box = new HBox(10, ico, lbl);
+        if (onGuide != null) {
+            box.getChildren().add(guideButton(onGuide));
+        }
         box.getStyleClass().add("step-title-bar");
         return box;
+    }
+
+    public static Button guideButton(Runnable onGuide) {
+        Button btn = new Button("?");
+        btn.getStyleClass().add("step-help-btn");
+        btn.setTooltip(new Tooltip("Open guide for this step"));
+        btn.setMinSize(24, 24);
+        btn.setPrefSize(24, 24);
+        btn.setMaxSize(24, 24);
+        btn.setAlignment(Pos.CENTER);
+        btn.setOnAction(e -> onGuide.run());
+        return btn;
+    }
+
+    public static void showGuideDialog(Window owner, String titleText, String guide) {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle(titleText + " Guide");
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        dialog.getDialogPane().getStyleClass().add("guide-dialog");
+
+        Label title = new Label(titleText);
+        title.getStyleClass().add("guide-title");
+
+        TextArea guideText = new TextArea(guide);
+        guideText.getStyleClass().add("guide-text");
+        guideText.setEditable(false);
+        guideText.setWrapText(true);
+        guideText.setPrefColumnCount(54);
+        guideText.setPrefRowCount(18);
+
+        VBox content = new VBox(12, title, guideText);
+        content.setPadding(new Insets(8));
+        dialog.getDialogPane().setContent(content);
+
+        if (owner != null) {
+            dialog.initOwner(owner);
+        }
+
+        dialog.showAndWait();
     }
 
     /** Format double to 2 decimal places */

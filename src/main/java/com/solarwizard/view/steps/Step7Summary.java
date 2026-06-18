@@ -40,9 +40,11 @@ public class Step7Summary implements WizardShell.StepView {
 
         Label titleLbl = new Label("Solar System Summary Report");
         titleLbl.getStyleClass().add("report-title");
+        HBox titleRow = new HBox(10, titleLbl, UiUtils.guideButton(shell::showCurrentStepGuide));
+        titleRow.setAlignment(Pos.CENTER);
         Label projLbl = new Label("Project: " + project.getProjectName());
         projLbl.getStyleClass().add("report-subtitle");
-        VBox header = new VBox(4, titleLbl, projLbl);
+        VBox header = new VBox(4, titleRow, projLbl);
         header.setAlignment(Pos.CENTER);
         mainContent.getChildren().add(header);
 

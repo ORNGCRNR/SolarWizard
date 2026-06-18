@@ -38,7 +38,7 @@ public class Step3InverterSizing implements WizardShell.StepView {
     private void build() {
         mainContent.setPadding(new Insets(24, 28, 24, 28));
         mainContent.getStyleClass().add("step-content");
-        mainContent.getChildren().add(UiUtils.stepTitle("6", "Step 6: Inverter Sizing"));
+        mainContent.getChildren().add(UiUtils.stepTitle("6", "Step 6: Inverter Sizing", shell::showCurrentStepGuide));
         mainContent.getChildren().add(warningBox);
         mainContent.getChildren().add(buildInputForm());
         mainContent.getChildren().add(buildResultTiles());

@@ -36,7 +36,7 @@ public class Step5ChargeController implements WizardShell.StepView {
     private void build() {
         mainContent.setPadding(new Insets(24, 28, 24, 28));
         mainContent.getStyleClass().add("step-content");
-        mainContent.getChildren().add(UiUtils.stepTitle("5", "Step 5: Solar Charge Controller Sizing"));
+        mainContent.getChildren().add(UiUtils.stepTitle("5", "Step 5: Solar Charge Controller Sizing", shell::showCurrentStepGuide));
         mainContent.getChildren().add(warningBox);
         mainContent.getChildren().add(buildForm());
         mainContent.getChildren().add(buildResultTiles());

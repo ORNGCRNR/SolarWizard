@@ -67,7 +67,7 @@ public class Step5WireSizing implements WizardShell.StepView {
     private void build() {
         mainContent.setPadding(new Insets(24, 28, 24, 28));
         mainContent.getStyleClass().add("step-content");
-        mainContent.getChildren().add(UiUtils.stepTitle("7", "Step 7: Wire Sizing (VDI Method)"));
+        mainContent.getChildren().add(UiUtils.stepTitle("7", "Step 7: Wire Sizing (VDI Method)", shell::showCurrentStepGuide));
         mainContent.getChildren().add(warningBox);
         mainContent.getChildren().add(buildInputGrid());
         mainContent.getChildren().add(buildTable());

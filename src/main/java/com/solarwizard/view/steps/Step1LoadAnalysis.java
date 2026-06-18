@@ -57,7 +57,7 @@ public class Step1LoadAnalysis implements WizardShell.StepView {
     private void build() {
         mainContent.setPadding(new Insets(24, 28, 24, 28));
         mainContent.getStyleClass().add("step-content");
-        mainContent.getChildren().add(UiUtils.stepTitle("1", "Step 1: List Appliances and Wattage"));
+        mainContent.getChildren().add(UiUtils.stepTitle("1", "Step 1: List Appliances and Wattage", shell::showCurrentStepGuide));
         mainContent.getChildren().add(modeContent);
         mainContent.getChildren().add(buildResultTiles());
         mainContent.getChildren().add(buildPeakSummaryCard());

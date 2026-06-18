@@ -2,8 +2,11 @@ package com.solarwizard.view;
 
 import com.solarwizard.model.SolarProject;
 import com.solarwizard.service.AppSettings;
+import com.solarwizard.service.GuideService;
 import com.solarwizard.service.ProjectSerializer;
 import com.solarwizard.service.ProjectStore;
+import com.solarwizard.service.ThemeService;
+import com.solarwizard.util.UiUtils;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -47,8 +50,26 @@ public class DashboardView {
 
     private void build() {
         root.getStyleClass().add("dashboard");
-        root.setCenter(buildCenter());
+        root.setCenter(buildMainArea());
         root.setBottom(buildBottomBar());
+    }
+
+    private StackPane buildMainArea() {
+        ScrollPane center = buildCenter();
+        Button guideBtn = UiUtils.guideButton(this::showDashboardGuide);
+        StackPane.setAlignment(guideBtn, Pos.TOP_LEFT);
+        StackPane.setMargin(guideBtn, new Insets(12, 0, 0, 12));
+
+        StackPane area = new StackPane(center, guideBtn);
+        area.getStyleClass().add("dashboard");
+        return area;
+    }
+
+    private void showDashboardGuide() {
+        UiUtils.showGuideDialog(
+            root.getScene() != null ? root.getScene().getWindow() : null,
+            "Main Menu",
+            GuideService.guideFor("Main Menu"));
     }
 
     private ScrollPane buildCenter() {
@@ -58,11 +79,20 @@ public class DashboardView {
         content.setMaxWidth(640);
 
         // Title
-        Label title    = new Label("☀  Solar Sizing Wizard");
+        Label sunIcon = new Label("☀");
+        sunIcon.getStyleClass().add("dashboard-sun-toggle");
+        sunIcon.setTooltip(new Tooltip("A little sunshine"));
+        sunIcon.setOnMouseClicked(e -> ThemeService.toggleWithFade(stage.getScene()));
+
+        Label title = new Label("Solar Sizing Wizard");
         title.getStyleClass().add("dashboard-title");
+        HBox titleRow = new HBox(10, sunIcon, title);
+        titleRow.getStyleClass().add("dashboard-title-row");
+        titleRow.setAlignment(Pos.CENTER);
+
         Label subtitle = new Label("Design your off-grid solar system step by step");
         subtitle.getStyleClass().add("dashboard-subtitle");
-        VBox titleBox  = new VBox(6, title, subtitle);
+        VBox titleBox  = new VBox(6, titleRow, subtitle);
         titleBox.setAlignment(Pos.CENTER);
 
         // Top row: stat card + save-directory card side by side

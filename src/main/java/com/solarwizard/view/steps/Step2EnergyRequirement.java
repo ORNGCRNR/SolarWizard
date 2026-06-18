@@ -33,7 +33,7 @@ public class Step2EnergyRequirement implements WizardShell.StepView {
     private void build() {
         mainContent.setPadding(new Insets(24, 28, 24, 28));
         mainContent.getStyleClass().add("step-content");
-        mainContent.getChildren().add(UiUtils.stepTitle("2", "Step 2: Compute Total Daily Energy"));
+        mainContent.getChildren().add(UiUtils.stepTitle("2", "Step 2: Compute Total Daily Energy", shell::showCurrentStepGuide));
         mainContent.getChildren().add(buildInputForm());
         mainContent.getChildren().add(buildResultTiles());
         HBox fb = UiUtils.formulaBanner("");

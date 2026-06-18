@@ -1,6 +1,7 @@
 package com.solarwizard.app;
 
 import com.solarwizard.model.SolarProject;
+import com.solarwizard.service.ThemeService;
 import com.solarwizard.view.DashboardView;
 import javafx.application.Application;
 import javafx.scene.Parent;
@@ -24,8 +25,7 @@ public class MainApp extends Application {
 
         DashboardView dashboard = new DashboardView(stage, project);
         Scene scene = new Scene((Parent) dashboard.getRoot(), WINDOW_W, WINDOW_H);
-        scene.getStylesheets().add(
-            getClass().getResource("/com/solarwizard/css/dark-theme.css").toExternalForm());
+        ThemeService.applyInitialTheme(scene);
 
         stage.setTitle(APP_TITLE);
         setAppIcon(stage);

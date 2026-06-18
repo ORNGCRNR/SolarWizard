@@ -1,7 +1,9 @@
 package com.solarwizard.view;
 
 import com.solarwizard.model.SolarProject;
+import com.solarwizard.service.GuideService;
 import com.solarwizard.service.ProjectStore;
+import com.solarwizard.util.UiUtils;
 import com.solarwizard.view.steps.*;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -131,6 +133,14 @@ public class WizardShell {
             try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
             javafx.application.Platform.runLater(() -> saveFeedbackLbl.setText(""));
         }).start();
+    }
+
+    public void showCurrentStepGuide() {
+        StepView step = steps.get(currentStep);
+        UiUtils.showGuideDialog(
+            root.getScene() != null ? root.getScene().getWindow() : null,
+            step.getStepTitle(),
+            GuideService.guideFor(step.getStepTitle()));
     }
 
     public void navigateTo(int idx) {
