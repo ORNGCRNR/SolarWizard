@@ -17,6 +17,7 @@ public class CalcService {
     public record AwgEntry(int awg, double areaMm2, int vdiMax, int maxAmps) {}
 
     public static final AwgEntry[] AWG_TABLE = {
+        new AwgEntry(18, 0.75,  1,  7),
         new AwgEntry(16, 1.31,  1,  10),
         new AwgEntry(14, 2.08,  2,  15),
         new AwgEntry(12, 3.31,  3,  20),

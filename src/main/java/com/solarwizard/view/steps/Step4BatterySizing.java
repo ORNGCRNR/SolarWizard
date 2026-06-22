@@ -107,9 +107,7 @@ public class Step4BatterySizing implements WizardShell.StepView {
         spAh.valueProperty().addListener((o, a, n) -> { project.setBatteryCapacityAh(n); recalculate(); });
 
         // Battery Quantity
-        Spinner<Integer> spQty = new Spinner<>(1, 9999, project.getBatteryQuantity());
-        spQty.setEditable(true);
-        spQty.getStyleClass().add("styled-spinner");
+        Spinner<Integer> spQty = UiUtils.intSpinner(1, 9999, project.getBatteryQuantity());
         spQty.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(spQty, Priority.ALWAYS);
         spQty.valueProperty().addListener((o, a, n) -> { project.setBatteryQuantity(n); recalculate(); });
@@ -260,8 +258,7 @@ public class Step4BatterySizing implements WizardShell.StepView {
     }
 
     private Spinner<Double> numSp(double init, double min, double max, double step) {
-        Spinner<Double> sp = new Spinner<>(min, max, init, step);
-        sp.setEditable(true); sp.getStyleClass().add("styled-spinner");
+        Spinner<Double> sp = UiUtils.doubleSpinner(min, max, init, step);
         sp.setMaxWidth(Double.MAX_VALUE); HBox.setHgrow(sp, Priority.ALWAYS); return sp;
     }
 

@@ -6,6 +6,8 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.stage.Window;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Reusable UI factory methods to keep controllers clean and consistent.
@@ -99,6 +101,16 @@ public final class UiUtils {
         sp.setEditable(true);
         sp.getStyleClass().add("styled-spinner");
         sp.setPrefWidth(140);
+        attachNumericValidation(
+            sp,
+            text -> {
+                double value = Double.parseDouble(text);
+                if (!Double.isFinite(value)) {
+                    throw new NumberFormatException("Non-finite number");
+                }
+                return value;
+            },
+            value -> value >= min && value <= max);
         return sp;
     }
 
@@ -107,7 +119,88 @@ public final class UiUtils {
         sp.setEditable(true);
         sp.getStyleClass().add("styled-spinner");
         sp.setPrefWidth(100);
+        attachNumericValidation(
+            sp,
+            Integer::parseInt,
+            value -> value >= min && value <= max);
         return sp;
+    }
+
+    private static <T> void attachNumericValidation(
+            Spinner<T> spinner,
+            Function<String, T> parser,
+            Predicate<T> isInRange) {
+        TextField editor = spinner.getEditor();
+
+        Runnable validate = () -> setInputInvalid(
+            spinner,
+            editor,
+            !isValidNumberText(editor.getText(), parser, isInRange));
+
+        editor.textProperty().addListener((o, oldText, newText) -> validate.run());
+        editor.setOnAction(e -> {
+            if (!commitSpinnerText(spinner, parser, isInRange)) {
+                setInputInvalid(spinner, editor, true);
+            }
+        });
+        editor.focusedProperty().addListener((o, wasFocused, focused) -> {
+            if (focused) {
+                validate.run();
+            } else if (!commitSpinnerText(spinner, parser, isInRange)) {
+                setInputInvalid(spinner, editor, true);
+            }
+        });
+        spinner.valueProperty().addListener((o, oldValue, newValue) -> {
+            if (!editor.isFocused()) {
+                setInputInvalid(spinner, editor, false);
+            }
+        });
+        validate.run();
+    }
+
+    private static <T> boolean commitSpinnerText(
+            Spinner<T> spinner,
+            Function<String, T> parser,
+            Predicate<T> isInRange) {
+        String text = spinner.getEditor().getText();
+        if (!isValidNumberText(text, parser, isInRange)) {
+            return false;
+        }
+        spinner.getValueFactory().setValue(parser.apply(text.trim()));
+        return true;
+    }
+
+    private static <T> boolean isValidNumberText(
+            String text,
+            Function<String, T> parser,
+            Predicate<T> isInRange) {
+        if (text == null || text.trim().isEmpty()) {
+            return false;
+        }
+        try {
+            T value = parser.apply(text.trim());
+            return isInRange.test(value);
+        } catch (RuntimeException ex) {
+            return false;
+        }
+    }
+
+    private static void setInputInvalid(
+            Spinner<?> spinner,
+            TextField editor,
+            boolean invalid) {
+        setStyleClass(spinner, "input-error", invalid);
+        setStyleClass(editor, "input-error", invalid);
+    }
+
+    private static void setStyleClass(Node node, String styleClass, boolean enabled) {
+        if (enabled) {
+            if (!node.getStyleClass().contains(styleClass)) {
+                node.getStyleClass().add(styleClass);
+            }
+        } else {
+            node.getStyleClass().remove(styleClass);
+        }
     }
 
     /** Labeled input group */

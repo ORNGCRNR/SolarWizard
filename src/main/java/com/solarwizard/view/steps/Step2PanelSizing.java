@@ -126,8 +126,7 @@ public class Step2PanelSizing implements WizardShell.StepView {
     }
 
     private Spinner<Double> numSp(double init, double min, double max, double step) {
-        Spinner<Double> sp = new Spinner<>(min, max, init, step);
-        sp.setEditable(true); sp.getStyleClass().add("styled-spinner");
+        Spinner<Double> sp = UiUtils.doubleSpinner(min, max, init, step);
         sp.setMaxWidth(Double.MAX_VALUE); HBox.setHgrow(sp, Priority.ALWAYS);
         return sp;
     }

@@ -231,8 +231,7 @@ public class Step1LoadAnalysis implements WizardShell.StepView {
         dfLbl.setMinWidth(W_DF);
         dfLbl.setMaxWidth(W_DF);
 
-        Spinner<Integer> spQ = new Spinner<>(1, 99, appliance.getQuantity());
-        spQ.setEditable(true); spQ.getStyleClass().add("styled-spinner");
+        Spinner<Integer> spQ = UiUtils.intSpinner(1, 99, appliance.getQuantity());
         spQ.setPrefWidth(W_QTY); spQ.setMinWidth(W_QTY); spQ.setMaxWidth(W_QTY);
         spQ.valueProperty().addListener((o, a, n) -> { appliance.setQuantity(n); recalculate(); });
 
@@ -304,8 +303,7 @@ public class Step1LoadAnalysis implements WizardShell.StepView {
     }
 
     private Spinner<Double> fixedSpinner(double init, double min, double max, double step, double width) {
-        Spinner<Double> sp = new Spinner<>(min, max, init, step);
-        sp.setEditable(true); sp.getStyleClass().add("styled-spinner");
+        Spinner<Double> sp = UiUtils.doubleSpinner(min, max, init, step);
         sp.setPrefWidth(width); sp.setMinWidth(width); sp.setMaxWidth(width);
         return sp;
     }

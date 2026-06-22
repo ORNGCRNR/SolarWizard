@@ -87,6 +87,13 @@
     -fx-prompt-text-fill: #8da0b5;
     -fx-border-color: #c8d3df;
 }
+.styled-spinner.input-error .text-field,
+.styled-spinner .text-field.input-error {
+    -fx-background-color: #fee2e2;
+    -fx-border-color: #dc2626;
+    -fx-border-width: 1.5;
+    -fx-text-fill: #991b1b;
+}
 .search-field:focused, .styled-field:focused {
     -fx-border-color: #2f6fd6;
 }

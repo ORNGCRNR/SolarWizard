@@ -45,7 +45,6 @@ public class Step6BreakerSizing implements WizardShell.StepView {
         mainContent.getChildren().add(fb);
         mainContent.getChildren().add(UiUtils.warningBanner(
             "Use DC-rated breakers for PV, SCC, and battery circuits. AC breakers are only for AC load wiring."));
-        mainContent.getChildren().add(buildOptionalComponents());
         mainContent.getChildren().add(buildNavRow());
 
         root.setContent(mainContent);
@@ -101,58 +100,6 @@ public class Step6BreakerSizing implements WizardShell.StepView {
             tableBox.getChildren().add(dataRow);
         }
         return tableBox;
-    }
-
-    private VBox buildOptionalComponents() {
-        Label title = new Label("Optional Protection Components");
-        title.getStyleClass().add("section-title");
-
-        HBox row1 = new HBox(12,
-            protCard("DC Surge Protection Device (SPD)",
-                "Location", "PV array to SCC",
-                "Type", "Type II DC SPD",
-                "Purpose", "Lightning and surge protection"),
-            protCard("AC Surge Protection Device (SPD)",
-                "Location", "Inverter AC output / main panel",
-                "Type", "Type II AC SPD",
-                "Purpose", "Grid surge and transient protection")
-        );
-        HBox row2 = new HBox(12,
-            protCard("Automatic Transfer Switch (ATS)",
-                "Location", "Between inverter output and grid/genset",
-                "Rating", "Based on AC output current",
-                "Purpose", "Automatic source transfer"),
-            protCard("DC Isolator / Disconnect Switch",
-                "Location", "PV array, SCC, and battery side",
-                "Rating", "Based on each DC phase current",
-                "Purpose", "Manual maintenance disconnect")
-        );
-        row1.getChildren().forEach(n -> HBox.setHgrow(n, Priority.ALWAYS));
-        row2.getChildren().forEach(n -> HBox.setHgrow(n, Priority.ALWAYS));
-        return new VBox(12, title, row1, row2);
-    }
-
-    private VBox protCard(String title, String... kvPairs) {
-        Label t = new Label(title);
-        t.getStyleClass().add("specs-title");
-        VBox card = new VBox(0);
-        card.getStyleClass().add("specs-card");
-        card.setPadding(new Insets(14));
-        card.getChildren().add(t);
-        for (int i = 0; i < kvPairs.length; i += 2) {
-            Label k = new Label(kvPairs[i]);
-            k.getStyleClass().add("spec-key");
-            Label v = new Label(kvPairs[i + 1]);
-            v.getStyleClass().addAll("spec-value", "spec-highlight");
-            Region sp = new Region();
-            HBox.setHgrow(sp, Priority.ALWAYS);
-            HBox row = new HBox(k, sp, v);
-            row.getStyleClass().add("spec-row");
-            row.setPadding(new Insets(7, 0, 7, 0));
-            card.getChildren().add(row);
-        }
-        HBox.setHgrow(card, Priority.ALWAYS);
-        return card;
     }
 
     private void recalculate() {

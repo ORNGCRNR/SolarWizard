@@ -40,6 +40,8 @@ public class Step5WireSizing implements WizardShell.StepView {
     };
 
     private static final String[][] PEC_STANDARD_ROWS = {
+        { "18 AWG", "0.75 mm²", "7 A", "7 A" },
+        { "16 AWG", "1.31 mm²", "10 A", "10 A" },
         { "14 AWG", "2.0 mm²", "15 A", "15 A" },
         { "12 AWG", "3.5 mm²", "20 A", "20 A" },
         { "10 AWG", "5.5 mm²", "30 A", "30 A" },
@@ -282,9 +284,7 @@ public class Step5WireSizing implements WizardShell.StepView {
     }
 
     private Spinner<Double> numSp(double init, double min, double max, double step) {
-        Spinner<Double> sp = new Spinner<>(min, max, init, step);
-        sp.setEditable(true);
-        sp.getStyleClass().add("styled-spinner");
+        Spinner<Double> sp = UiUtils.doubleSpinner(min, max, init, step);
         sp.setMaxWidth(Double.MAX_VALUE);
         return sp;
     }

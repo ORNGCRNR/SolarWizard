@@ -217,6 +217,13 @@
     -fx-border-width: 1;
     -fx-padding: 6 8 6 8;
 }
+.styled-spinner.input-error .text-field,
+.styled-spinner .text-field.input-error {
+    -fx-background-color: #2d1010;
+    -fx-border-color: #ef4444;
+    -fx-border-width: 1.5;
+    -fx-text-fill: #fecaca;
+}
 .styled-spinner .increment-arrow-button,
 .styled-spinner .decrement-arrow-button {
     -fx-background-color: #374151;
